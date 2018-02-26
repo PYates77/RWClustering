@@ -34,9 +34,25 @@ def retrieveNodeByID(nList,ID):
 		if nList[i].nodeID == ID:
 			return nList[i]
 			
-def arrowGenerator(cursor,srcNode,dstNode,buffer):
+def arrowGenerator(cursor,srcNode,dstNode,sBuffer,eBuffer):
+	"""Helper function to generate directional arrows between ancestors and successors"""
 	cursor.penup()
-	cursor.gotto(srcNode.X,srcNode.Y - 20)
+	cursor.goto(srcNode.X,srcNode.Y - sBuffer)
+	cursor.pendown()
+	distance = math.hypot(dstNode.X - srcNode.X,dstNode.Y - srcNode.Y) - eBuffer
+	if (dstNode.X == srcNode.X):
+		cursor.seth(-90)
+	else:
+		headAngle = math.atan((dstNode.Y-srcNode.Y)/(dstNode.X-srcNode.X))
+		headAngle = math.degrees(headAngle)
+		if (dstNode.X < srcNode.X):
+			cursor.seth(headAngle+180)
+		else:
+			cursor.seth(-headAngle)
+	cursor.forward(distance)
+	cursor.stamp()
+	
+	
 	
 print "Parsing graph.txt"
 graphFile = open(INPUT_GRAPH_FILENAME,"r")
@@ -145,7 +161,18 @@ while nodesToBePlaced:
 		toBePlaced[i].Y = CUR_Y
 		nodesPlaced.append(toBePlaced[i])
 
-for nPlaced in nodesPlaced:
+nodeList = nodesPlaced
+for nPlaced in nodeList:
 	nPlaced.printNodeInfo()
+
+#Switch turtle back to arrow
+p.shape("classic")
+p.st()
+
+for srcNode in nodeList:
+	for n in srcNode.next:
+		nextNode = retrieveNodeByID(nodeList,n)
+		arrowGenerator(p,srcNode,nextNode,20,40)
+		
 		
 turtle.done()
