@@ -33,6 +33,10 @@ def retrieveNodeByID(nList,ID):
 	for i in range(0,len(nList)):
 		if nList[i].nodeID == ID:
 			return nList[i]
+			
+def arrowGenerator(cursor,srcNode,dstNode,buffer):
+	cursor.penup()
+	cursor.gotto(srcNode.X,srcNode.Y - 20)
 	
 print "Parsing graph.txt"
 graphFile = open(INPUT_GRAPH_FILENAME,"r")
@@ -111,24 +115,11 @@ for i in range(0,len(sourceNodeList)):
 CUR_Y = TOP_Y
 #Place all next nodes
 while nodesToBePlaced:
-	#print "\nALL NODES IN CIRCUIT\n"
-	#for n in nodeList:
-	#	n.printNodeInfo()
-	#print "\nCURRENTLY PLACED\n"
-	#for n in nodesToBePlaced:
-	#	n.printNodeInfo()
-	#print "\nPLACED ALREADY\n"
-	#for n in nodesPlaced:
-	#	n.printNodeInfo()
 	toBePlaced = []
 	for n in nodesToBePlaced:
-		#print "NODE SELECTED: ",n.nodeID
 		readyToPlace = True
 		for pr in n.prev:
-			#print "SEARCHING FOR NODE WITH ID: ",pr
 			np = retrieveNodeByID(nodeList,pr)
-			#print "\tANCESTOR UNDER REVIEW: ",np.nodeID
-			#np.printNodeInfo()
 			if np not in nodesPlaced:
 				readyToPlace = False
 		if readyToPlace:
