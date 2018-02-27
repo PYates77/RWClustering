@@ -8,17 +8,35 @@
 import turtle 
 import re
 import math
+import random
 
 INPUT_GRAPH_FILENAME = "input_graph.txt"
+GLOBAL_SKEW = 200
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 800
+SBUFFER = 20
+EBUFFER = 40
+	
+p = turtle.Turtle()
+pScreen = p.getscreen()
+pScreen.setup(width=SCREEN_WIDTH, height=SCREEN_HEIGHT, startx=None, starty=None)
+pScreen.register_shape("Circle.gif")
+pScreen.screensize(2000,2000)
+p.shape("Circle.gif")
+
+LEFT_X = -(SCREEN_WIDTH/2)+100
+RIGHT_X = (SCREEN_WIDTH/2)-100
+TOP_Y = (SCREEN_HEIGHT/2)-100
+DOWN_Y = -(SCREEN_HEIGHT/2)+100
 
 class Node:
 	def __init__(self):
-		self.prev = [];
-		self.next = [];
-		self.nodeID = -1;
-		self.circuitNets = [];
-		self.X = -1;
-		self.Y = -1;
+		self.prev = []
+		self.next = []
+		self.nodeID = -1
+		self.circuitNets = []
+		self.X = -1
+		self.Y = -1
 	def printNodeInfo(self):
 		print "NODE ", self.nodeID
 		print "Nets Contained: ", self.circuitNets
@@ -27,6 +45,21 @@ class Node:
 		if self.X != -1 and self.Y != -1:
 			print "X: ",self.X
 			print "Y: ",self.Y
+
+class Edge:
+	"""Class to track edge objects between nodes"""
+	def __init__(self):
+		self.srcNode = None
+		self.dstNode = None
+		self.startX = -1
+		self.startY = -1
+		self.endX = -1
+		self.endY = -1
+	def printEdgeInfo(self):
+		print "EDGE FROM NODE ", self.srcNode.nodeID, " TO NODE ", self.dstNode.nodeID
+		print "Starting Coordinate: (", self.startX, ", ", self.startY, ")"
+		print "Ending Coordinate: (", self.endX, ", ", self.endY, ")"
+
 		
 def retrieveNodeByID(nList,ID):
 	"""Helper function for retreiving a node by ID"""
@@ -34,23 +67,45 @@ def retrieveNodeByID(nList,ID):
 		if nList[i].nodeID == ID:
 			return nList[i]
 			
-def arrowGenerator(cursor,srcNode,dstNode,sBuffer,eBuffer):
+def edgeGenerator(srcNode,dstNode):
+	"""Helper function for creating a list of edges for all nodes"""
+	e = Edge()
+	e.srcNode = srcNode
+	e.dstNode = dstNode
+	e.startX = srcNode.X 
+	e.startY = srcNode.Y
+	e.endX = dstNode.X
+	e.endY = dstNode.Y
+	return e
+			
+def arrowGenerator(cursor,e,sBuffer,eBuffer):
 	"""Helper function to generate directional arrows between ancestors and successors"""
 	cursor.penup()
-	cursor.goto(srcNode.X,srcNode.Y - sBuffer)
+	cursor.goto(e.startX,e.startY - sBuffer)
 	cursor.pendown()
-	distance = math.hypot(dstNode.X - srcNode.X,dstNode.Y - srcNode.Y) - eBuffer
-	if (dstNode.X == srcNode.X):
+	distance = math.hypot(e.endX - e.startX,e.endY - e.startY) - eBuffer
+	if (e.endX == e.startX):
 		cursor.seth(-90)
 	else:
-		headAngle = math.atan((dstNode.Y-srcNode.Y)/(dstNode.X-srcNode.X))
+		headAngle = math.atan((e.endY-e.startY)/(e.endX-e.startX))
 		headAngle = math.degrees(headAngle)
-		if (dstNode.X < srcNode.X):
+		if (e.endX < e.startX):
 			cursor.seth(headAngle+180)
 		else:
-			cursor.seth(-headAngle)
+			cursor.seth(headAngle)
 	cursor.forward(distance)
 	cursor.stamp()
+	
+def drawNodes(cursor,nList):
+	"""Helper function to draw the nodes onto the screen"""
+	return None
+	
+def verifyPlacement(nList):
+	"""Helper function designed to verify placement of nodes onto screen for a directed acyclic graph (DAG)"""
+	CONFLICT = True
+	while(CONFLICT):
+		CONFLICT = False
+		
 	
 	
 	
@@ -83,22 +138,10 @@ sourceNodeList = []
 for n in nodeList:
 	if not n.prev:
 		sourceNodeList.append(n) 	
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 800
-	
-p = turtle.Turtle()
-pScreen = p.getscreen()
-pScreen.setup(width=SCREEN_WIDTH, height=SCREEN_HEIGHT, startx=None, starty=None)
-pScreen.register_shape("Circle.gif")
-pScreen.screensize(2000,2000)
-p.shape("Circle.gif")
 
-LEFT_X = -(SCREEN_WIDTH/2)+100
-RIGHT_X = (SCREEN_WIDTH/2)-100
-TOP_Y = (SCREEN_HEIGHT/2)-100
-DOWN_Y = -(SCREEN_HEIGHT/2)+100
 
-#sourceNodeList = [1,2,3,4,5,6,7]
+
+
 X_SRC_STEP = (RIGHT_X-LEFT_X)/len(sourceNodeList)
 Y_STEP = 150
 
@@ -150,6 +193,9 @@ while nodesToBePlaced:
 			SRCX = LEFT_X+X_SRC_STEP*(math.floor(i/2))
 		else:
 			SRCX = RIGHT_X-X_SRC_STEP*(math.floor(i/2))
+		
+		if (X_SRC_STEP > GLOBAL_SKEW):
+			SRCX = SRCX + random.randint(-GLOBAL_SKEW,GLOBAL_SKEW)
 		p.goto(SRCX,CUR_Y)
 		p.stamp()
 		p.penup()
@@ -164,15 +210,21 @@ while nodesToBePlaced:
 nodeList = nodesPlaced
 for nPlaced in nodeList:
 	nPlaced.printNodeInfo()
+	
+#verify placement
+	
 
 #Switch turtle back to arrow
 p.shape("classic")
 p.st()
 
+edgeList = []
 for srcNode in nodeList:
 	for n in srcNode.next:
 		nextNode = retrieveNodeByID(nodeList,n)
-		arrowGenerator(p,srcNode,nextNode,20,40)
+		e = edgeGenerator(srcNode,nextNode)
+		arrowGenerator(p,e,SBUFFER,EBUFFER)
+		edgeList.append(e)
 		
 		
 turtle.done()
