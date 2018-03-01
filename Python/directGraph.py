@@ -12,22 +12,25 @@ import random
 
 INPUT_GRAPH_FILENAME = "input_graph.txt"
 GLOBAL_SKEW = 200
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 800
+CANVAS_WIDTH = 800
+CANVAS_HEIGHT = 800
+SCREEN_WIDTH = 2000
+SCREEN_HEIGHT = 2000
 SBUFFER = 20
 EBUFFER = 40
+Y_STEP = 100
 	
 p = turtle.Turtle()
 pScreen = p.getscreen()
-pScreen.setup(width=SCREEN_WIDTH, height=SCREEN_HEIGHT, startx=None, starty=None)
+pScreen.setup(width=CANVAS_WIDTH, height=CANVAS_HEIGHT, startx=None, starty=None)
 pScreen.register_shape("Circle.gif")
-pScreen.screensize(2000,2000)
+pScreen.screensize(SCREEN_WIDTH,SCREEN_HEIGHT)
 p.shape("Circle.gif")
 
-LEFT_X = -(SCREEN_WIDTH/2)+100
-RIGHT_X = (SCREEN_WIDTH/2)-100
-TOP_Y = (SCREEN_HEIGHT/2)-100
-DOWN_Y = -(SCREEN_HEIGHT/2)+100
+LEFT_X = -(CANVAS_WIDTH/2)+100
+RIGHT_X = (CANVAS_WIDTH/2)-100
+TOP_Y = (CANVAS_HEIGHT/2)-100
+DOWN_Y = -(CANVAS_HEIGHT/2)+100
 
 class Node:
 	def __init__(self):
@@ -84,21 +87,74 @@ def arrowGenerator(cursor,e,sBuffer,eBuffer):
 	cursor.goto(e.startX,e.startY - sBuffer)
 	cursor.pendown()
 	distance = math.hypot(e.endX - e.startX,e.endY - e.startY) - eBuffer
-	if (e.endX == e.startX):
-		cursor.seth(-90)
-	else:
-		headAngle = math.atan((e.endY-e.startY)/(e.endX-e.startX))
-		headAngle = math.degrees(headAngle)
-		if (e.endX < e.startX):
-			cursor.seth(headAngle+180)
-		else:
-			cursor.seth(headAngle)
+	headAngle = math.atan2(e.endY-e.startY,e.endX-e.startX)
+	headAngle = math.degrees(headAngle)
+	cursor.seth(headAngle)
 	cursor.forward(distance)
 	cursor.stamp()
+
+def nodePlacement(srcNodeList,nodeMasterList):
+	"""Helper function to generate placement of all nodes"""
+	X_SRC_STEP = (RIGHT_X-LEFT_X)/len(srcNodeList)
+	
+	nodesToBePlaced = nodeMasterList[:]
+	nodesPlaced = []
+
+	
+	#Place Source Nodes
+	for i in range(0,len(srcNodeList)):
+		SRCX = 0;
+		if (i%2 == 0):
+			SRCX = LEFT_X+X_SRC_STEP*(math.floor(i/2))
+		else:
+			SRCX = RIGHT_X-X_SRC_STEP*(math.floor(i/2))
+		nodesToBePlaced.pop(nodesToBePlaced.index(srcNodeList[i]))
+		srcNodeList[i].X = SRCX
+		srcNodeList[i].Y = TOP_Y
+		nodesPlaced.append(srcNodeList[i])
+		
+	CUR_Y = TOP_Y
+	#Place all next nodes
+	while nodesToBePlaced:
+		toBePlaced = []
+		for n in nodesToBePlaced:
+			readyToPlace = True
+			for pr in n.prev:
+				np = retrieveNodeByID(nodeMasterList,pr)
+				if np not in nodesPlaced:
+					readyToPlace = False
+			if readyToPlace:
+				toBePlaced.append(n)
+		
+		#Begin placement
+		CUR_Y -= Y_STEP
+		X_STEP = (RIGHT_X-LEFT_X)/len(toBePlaced)
+		for i in range(0,len(toBePlaced)):
+			SRCX = 0
+			if (i%2==0):
+				SRCX = LEFT_X+X_SRC_STEP*(math.floor(i/2))
+			else:
+				SRCX = RIGHT_X-X_SRC_STEP*(math.floor(i/2))
+		
+			if (X_SRC_STEP > GLOBAL_SKEW):
+				SRCX = SRCX + random.randint(-GLOBAL_SKEW,GLOBAL_SKEW)
+
+			nodesToBePlaced.pop(nodesToBePlaced.index(toBePlaced[i]))
+			toBePlaced[i].X = SRCX
+			toBePlaced[i].Y = CUR_Y
+			nodesPlaced.append(toBePlaced[i])
+	
+	return nodesPlaced
 	
 def drawNodes(cursor,nList):
 	"""Helper function to draw the nodes onto the screen"""
-	return None
+	for n in nList:
+		cursor.penup()
+		cursor.goto(n.X,n.Y)
+		cursor.stamp()
+		cursor.penup()
+		cursor.goto(n.X,n.Y-10)
+		cursor.write(n.nodeID,True,align="center",font=("Times New Roman",20,"normal"))
 	
 def verifyPlacement(nList):
 	"""Helper function designed to verify placement of nodes onto screen for a directed acyclic graph (DAG)"""
@@ -139,80 +195,79 @@ for n in nodeList:
 	if not n.prev:
 		sourceNodeList.append(n) 	
 
-
-
-
-X_SRC_STEP = (RIGHT_X-LEFT_X)/len(sourceNodeList)
-Y_STEP = 150
-
-
-
 p.ht()
 p.penup()
 
-nodesToBePlaced = nodeList[:]
-nodesPlaced = []
 
-#Place Source Nodes
-for i in range(0,len(sourceNodeList)):
-	SRCX = 0;
-	if (i%2 == 0):
-		SRCX = LEFT_X+X_SRC_STEP*(math.floor(i/2))
-	else:
-		SRCX = RIGHT_X-X_SRC_STEP*(math.floor(i/2))
-	p.goto(SRCX,TOP_Y)
-	p.stamp()
-	p.penup()
-	p.goto(SRCX,TOP_Y-10)
-	p.write(sourceNodeList[i].nodeID,True,align="center",font=("Times New Roman",20,"normal"))
-	p.penup()
-	nodesToBePlaced.pop(nodesToBePlaced.index(sourceNodeList[i]))
-	sourceNodeList[i].X = SRCX
-	sourceNodeList[i].Y = TOP_Y
-	nodesPlaced.append(sourceNodeList[i])
 
-CUR_Y = TOP_Y
-#Place all next nodes
-while nodesToBePlaced:
-	toBePlaced = []
-	for n in nodesToBePlaced:
-		readyToPlace = True
-		for pr in n.prev:
-			np = retrieveNodeByID(nodeList,pr)
-			if np not in nodesPlaced:
-				readyToPlace = False
-		if readyToPlace:
-			toBePlaced.append(n)
-	#Begin placement
+# X_SRC_STEP = (RIGHT_X-LEFT_X)/len(sourceNodeList)
 
-	CUR_Y -= Y_STEP
-	X_STEP = (RIGHT_X-LEFT_X)/len(toBePlaced)
-	for i in range(0,len(toBePlaced)):
-		SRCX = 0
-		if (i%2==0):
-			SRCX = LEFT_X+X_SRC_STEP*(math.floor(i/2))
-		else:
-			SRCX = RIGHT_X-X_SRC_STEP*(math.floor(i/2))
+# nodesToBePlaced = nodeList[:]
+# nodesPlaced = []
+
+# #Place Source Nodes
+# for i in range(0,len(sourceNodeList)):
+	# SRCX = 0;
+	# if (i%2 == 0):
+		# SRCX = LEFT_X+X_SRC_STEP*(math.floor(i/2))
+	# else:
+		# SRCX = RIGHT_X-X_SRC_STEP*(math.floor(i/2))
+	# p.goto(SRCX,TOP_Y)
+	# p.stamp()
+	# p.penup()
+	# p.goto(SRCX,TOP_Y-10)
+	# p.write(sourceNodeList[i].nodeID,True,align="center",font=("Times New Roman",20,"normal"))
+	# p.penup()
+	# nodesToBePlaced.pop(nodesToBePlaced.index(sourceNodeList[i]))
+	# sourceNodeList[i].X = SRCX
+	# sourceNodeList[i].Y = TOP_Y
+	# nodesPlaced.append(sourceNodeList[i])
+
+# CUR_Y = TOP_Y
+# #Place all next nodes
+# while nodesToBePlaced:
+	# toBePlaced = []
+	# for n in nodesToBePlaced:
+		# readyToPlace = True
+		# for pr in n.prev:
+			# np = retrieveNodeByID(nodeList,pr)
+			# if np not in nodesPlaced:
+				# readyToPlace = False
+		# if readyToPlace:
+			# toBePlaced.append(n)
+	# #Begin placement
+
+	# CUR_Y -= Y_STEP
+	# X_STEP = (RIGHT_X-LEFT_X)/len(toBePlaced)
+	# for i in range(0,len(toBePlaced)):
+		# SRCX = 0
+		# if (i%2==0):
+			# SRCX = LEFT_X+X_SRC_STEP*(math.floor(i/2))
+		# else:
+			# SRCX = RIGHT_X-X_SRC_STEP*(math.floor(i/2))
 		
-		if (X_SRC_STEP > GLOBAL_SKEW):
-			SRCX = SRCX + random.randint(-GLOBAL_SKEW,GLOBAL_SKEW)
-		p.goto(SRCX,CUR_Y)
-		p.stamp()
-		p.penup()
-		p.goto(SRCX,CUR_Y-10)
-		p.write(toBePlaced[i].nodeID,True,align="center",font=("Times New Roman",20,"normal"))
-		p.penup()
-		nodesToBePlaced.pop(nodesToBePlaced.index(toBePlaced[i]))
-		toBePlaced[i].X = SRCX
-		toBePlaced[i].Y = CUR_Y
-		nodesPlaced.append(toBePlaced[i])
+		# if (X_SRC_STEP > GLOBAL_SKEW):
+			# SRCX = SRCX + random.randint(-GLOBAL_SKEW,GLOBAL_SKEW)
+		# p.goto(SRCX,CUR_Y)
+		# p.stamp()
+		# p.penup()
+		# p.goto(SRCX,CUR_Y-10)
+		# p.write(toBePlaced[i].nodeID,True,align="center",font=("Times New Roman",20,"normal"))
+		# p.penup()
+		# nodesToBePlaced.pop(nodesToBePlaced.index(toBePlaced[i]))
+		# toBePlaced[i].X = SRCX
+		# toBePlaced[i].Y = CUR_Y
+		# nodesPlaced.append(toBePlaced[i])
 
-nodeList = nodesPlaced
-for nPlaced in nodeList:
-	nPlaced.printNodeInfo()
-	
+# nodeList = nodesPlaced
+# for nPlaced in nodeList:
+	# nPlaced.printNodeInfo()
+
+#do placement
+nodeList = nodePlacement(sourceNodeList,nodeList)	
 #verify placement
-	
+#draw nodes
+drawNodes(p,nodeList)	
 
 #Switch turtle back to arrow
 p.shape("classic")
