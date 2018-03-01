@@ -9,6 +9,7 @@ import turtle
 import re
 import math
 import random
+import Tkinter as tkinter
 
 INPUT_GRAPH_FILENAME = "input_graph.txt"
 CURSOR_SIZE = 50
@@ -21,11 +22,31 @@ SCREEN_HEIGHT = 2000
 SBUFFER = 20
 EBUFFER = 40
 Y_STEP = 2.5*CURSOR_SIZE
-DEGREE_FOR_CONFLICT = 5
-	
-p = turtle.Turtle()
+DEGREE_FOR_CONFLICT = 7
+
+root = tkinter.Tk()
+root.title("RW Clustering GUI")
+root.geometry("900x900")
+v = tkinter.Scrollbar(root, orient=tkinter.VERTICAL)
+h = tkinter.Scrollbar(root,orient=tkinter.HORIZONTAL)
+
+v.pack(side=tkinter.RIGHT,fill=tkinter.Y)
+h.pack(side=tkinter.BOTTOM,fill=tkinter.X)
+
+
+
+cv = tkinter.Canvas(root,width=SCREEN_WIDTH,height=SCREEN_HEIGHT,yscrollcommand=v.set,xscrollcommand=h.set)
+
+
+cv.pack(side=tkinter.LEFT,fill=tkinter.BOTH)
+v.config(command = cv.yview)
+h.config(command = cv.xview)
+cv.config(scrollregion=cv.bbox(tkinter.ALL))
+
+
+p = turtle.RawTurtle(cv)
 pScreen = p.getscreen()
-pScreen.setup(width=CANVAS_WIDTH, height=CANVAS_HEIGHT, startx=None, starty=None)
+#pScreen.setup(width=CANVAS_WIDTH, height=CANVAS_HEIGHT, startx=None, starty=None)
 pScreen.register_shape("Circle.gif")
 pScreen.screensize(SCREEN_WIDTH,SCREEN_HEIGHT)
 p.shape("Circle.gif")
@@ -34,6 +55,10 @@ LEFT_X = -(CANVAS_WIDTH/2)+CURSOR_SIZE
 RIGHT_X = (CANVAS_WIDTH/2)-CURSOR_SIZE
 TOP_Y = (CANVAS_HEIGHT/2)-CURSOR_SIZE
 DOWN_Y = -(CANVAS_HEIGHT/2)+CURSOR_SIZE
+
+#Center canvas
+cv.yview_scroll(-5,"units")
+cv.xview_scroll(-5,"units")
 
 class Node:
     def __init__(self):
@@ -296,7 +321,7 @@ while (needToPlace):
     #cont = raw_input("Enter any key to continue")
 
 #Drawing time
-print "Iteration ", count, "Passed. Drawing DAG..."
+print "Iteration ", count-1, "Passed. Drawing DAG..."
 p.ht()
 p.penup()
 p.shape("Circle.gif")
@@ -305,5 +330,6 @@ p.shape("classic")
 p.st()
 for e in edgeList:
     arrowGenerator(p, e, SBUFFER, EBUFFER)
-
 turtle.done()
+
+root.mainloop()
