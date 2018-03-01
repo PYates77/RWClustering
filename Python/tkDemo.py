@@ -1,58 +1,33 @@
 import Tkinter as tk
+import 
  
-class ExampleApp(tk.Frame):
-    ''' An example application for TkInter.  Instantiate
-        and call the run method to run. '''
+class Demo1:
     def __init__(self, master):
-        # Initialize window using the parent's constructor
-        tk.Frame.__init__(self,
-                          master,
-                          width=300,
-                          height=200)
-        # Set the title
-        self.master.title('TkInter Example')
- 
-        # This allows the size specification to take effect
-        self.pack_propagate(0)
- 
-        # We'll use the flexible pack layout manager
-        self.pack()
- 
-        # The greeting selector
-        # Use a StringVar to access the selector's value
-        self.greeting_var = tk.StringVar()
-        self.greeting = tk.OptionMenu(self,
-                                      self.greeting_var,
-                                      'hello',
-                                      'goodbye',
-                                      'heyo')
-        self.greeting_var.set('hello')
- 
-        # The recipient text entry control and its StringVar
-        self.recipient_var = tk.StringVar()
-        self.recipient = tk.Entry(self,
-                                  textvariable=self.recipient_var)
-        self.recipient_var.set('world')
- 
-        # The go button
-        self.go_button = tk.Button(self,
-                                   text='Go',
-                                   command=self.print_out)
- 
-        # Put the controls on the form
-        self.go_button.pack(fill=tk.X, side=tk.BOTTOM)
-        self.greeting.pack(fill=tk.X, side=tk.TOP)
-        self.recipient.pack(fill=tk.X, side=tk.TOP)
- 
-    def print_out(self):
-        ''' Print a greeting constructed
-            from the selections made by
-            the user. '''
-        print('%s, %s!' % (self.greeting_var.get().title(),
-                           self.recipient_var.get()))
-    def run(self):
-        ''' Run the app '''
-        self.mainloop()
- 
-app = ExampleApp(tk.Tk())
-app.run()
+        self.master = master
+        self.frame = tk.Frame(self.master)
+        self.button1 = tk.Button(self.frame, text = 'New Window', width = 25, command = self.new_window)
+        self.button1.pack()
+        self.frame.pack()
+
+    def new_window(self):
+        self.newWindow = tk.Toplevel(self.master)
+        self.app = Demo2(self.newWindow)
+
+class Demo2:
+    def __init__(self, master):
+        self.master = master
+        self.frame = tk.Frame(self.master)
+        self.quitButton = tk.Button(self.frame, text = 'Quit', width = 25, command = self.close_windows)
+        self.quitButton.pack()
+        self.frame.pack()
+
+    def close_windows(self):
+        self.master.destroy()
+
+def main(): 
+    root = tk.Tk()
+    app = Demo1(root)
+    root.mainloop()
+
+if __name__ == '__main__':
+    main()
