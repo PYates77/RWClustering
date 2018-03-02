@@ -19,6 +19,11 @@ int main(int argc, char **argv) {
 
     std::vector<Node> master;
     addToMaster(master, PIs.front()); //recursively add all of the nodes to the master list in topological order
+    //number the nodes in order for use in indexing the delay_matrix array
+    int id = 0;
+    for(std::vector::iterator it = master.begin(); it != master.end(); ++it){
+        it->id = id++;
+    }
 
     int* delay_matrix; //TODO: allocate me
 
