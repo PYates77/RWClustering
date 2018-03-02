@@ -10,9 +10,10 @@ import re
 import math
 import random
 import Tkinter as tkinter
+import time
 
 #PARAMETERS THAT CAN BE CONFIGURED BY USER
-INPUT_GRAPH_FILENAME = "input_graph.txt"
+INPUT_GRAPH_FILENAME = "input_graph_lecture.txt"
 DELAY = 1
 CURSOR_SIZE = 50
 GLOBAL_SKEW_X = 1.5*CURSOR_SIZE
@@ -56,14 +57,6 @@ cv.place(x = 0, y = 0, width = CANVAS_DISPLAY_W, height = CANVAS_DISPLAY_H)
 tableFrame = tkinter.Frame(root)
 tableFrame.place(x = CANVAS_DISPLAY_W + SCROLLBAR_WIDTH, y = 0, width = TABLE_WIDTH, height = WINDOW_HEIGHT)
 
-#myList = tkinter.Listbox(tableFrame)
-#for line in range(100):
-#   myList.insert(tkinter.END, "\tNODE NAME\tNODE LABEL\tNODE DELAY\tCLUSTER")
-#myList.place(x = 0, y = 0, width = TABLE_WIDTH, height = WINDOW_HEIGHT)
-
-#for i in range(1,101,2):
-#   myList.itemconfig(i, background="#ecf8f2")
-
 
 v.config(command = cv.yview)
 h.config(command = cv.xview)
@@ -73,7 +66,6 @@ cv.config(scrollregion=cv.bbox(tkinter.ALL))
 p = turtle.RawTurtle(cv)
 pScreen = p.getscreen()
 p.speed(0)
-#pScreen.setup(width=CANVAS_WIDTH, height=CANVAS_HEIGHT, startx=None, starty=None)
 pScreen.register_shape("Circle.gif")
 pScreen.screensize(SCREEN_WIDTH,SCREEN_HEIGHT)
 p.shape("Circle.gif")
@@ -107,6 +99,8 @@ class Node:
         if self.X != -1 and self.Y != -1:
             print "X: ",self.X
             print "Y: ",self.Y
+    def printSummaryInfo(self):
+        print "NODE ", self.nodeID
 
 class Edge:
     """Class to track edge objects between nodes"""
@@ -173,7 +167,7 @@ def nodePlacement(srcNodeList,nodeMasterList):
         srcNodeList[i].X = SRCX
         srcNodeList[i].Y = TOP_Y
         nodesPlaced.append(srcNodeList[i])
-		
+	
     CUR_Y = TOP_Y
     #Place all next nodes
     while nodesToBePlaced:
@@ -186,10 +180,11 @@ def nodePlacement(srcNodeList,nodeMasterList):
                     readyToPlace = False
             if readyToPlace:
                 toBePlaced.append(n)
-		
+	
         #Begin placement
         CUR_Y -= Y_STEP
-        X_STEP = (RIGHT_X-LEFT_X)/len(toBePlaced)
+        if len(toBePlaced) > 0:
+            X_STEP = (RIGHT_X-LEFT_X)/len(toBePlaced)
         for i in range(0,len(toBePlaced)):
             SRCX = 0
             if (i%2==0):
@@ -205,6 +200,7 @@ def nodePlacement(srcNodeList,nodeMasterList):
             toBePlaced[i].X = SRCX
             toBePlaced[i].Y = CUR_Y
             nodesPlaced.append(toBePlaced[i])
+
 	
     return nodesPlaced
 	
@@ -234,6 +230,12 @@ def verifyPlacement(nList,eList):
                 #print "Angle Violation:\nEdge Angle: ", e.angle, "\nAngle to Violating Node: ", headAngle
                 return True
     return False
+    
+    
+    
+#END OF FUNCTIONS
+    
+    
 	
 print "Parsing graph.txt"
 graphFile = open(INPUT_GRAPH_FILENAME,"r")
@@ -249,16 +251,23 @@ for line in graphFile:
     if sO:
         FLAG = sO.group(1)
     if (FLAG == "NODES"):
-        sO2 = re.search(r'(.*):(.*);(.*);(.*)',line)
+        sO2 = re.search(r'(.*):(.*);(.*);(.*);(.*);(.*)',line)
         if sO2:
             newNode = Node()
             newNode.nodeID = sO2.group(1)
             newNode.circuitNets = sO2.group(2).split()
             newNode.prevn = sO2.group(3).split()
             newNode.nextn = sO2.group(4).split()
+            newNode.label = sO2.group(5).split()
+            newNode.cluster = sO2.group(6).split()
             nodeList.append(newNode)
     if (FLAG == "DELAY"):
         DELAY = line
+        
+sourceNodeList = []	
+for n in nodeList:
+    if not n.prevn:
+        sourceNodeList.append(n)
 
 #Populate table of information
 for i in range(len(nodeList)+1): #Rows
@@ -282,24 +291,23 @@ for i in range(len(nodeList)+1): #Rows
             if j == 3:
                 msg = nodeList[i-1].label
             if j == 4:
-                msg = nodeList[i-1].cluster
+                msg = "{"
+                for c in nodeList[i-1].cluster:
+                    msg += c + ","
+                msg = msg[0:len(msg)-1] + "}"
             fontStyle = "normal"
         b.config(font=("Times New Roman", FONT_SIZE, fontStyle))
         b.config(text=msg)
         b.grid(row=i, column=j)
 
-sourceNodeList = []	
-for n in nodeList:
-    if not n.prevn:
-        sourceNodeList.append(n)
-
 
 
 needToPlace = True
 count = 0
+start = time.time()
 while (needToPlace):
     #do placement
-    print "Attempting Placement Iteration ", count
+    #print "Attempting Placement Iteration ", count
     nodeList = nodePlacement(sourceNodeList,nodeList)
     edgeList = []
     for srcNode in nodeList:
@@ -314,8 +322,10 @@ while (needToPlace):
     count += 1
     #cont = raw_input("Enter any key to continue")
 
+end = time.time()
+count -= 1
+print "SUMMARY:\nIterations Required For Placement: ", count, "\nElapsed Time (ms): ", str((end - start )*1000.0)
 #Drawing time
-print "Iteration ", count-1, "Passed. Drawing DAG..."
 p.ht()
 p.penup()
 p.shape("Circle.gif")

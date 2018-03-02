@@ -1,0 +1,15 @@
+//NODES
+a:;;d f;1;a
+b:;;d e;1;b
+c:;;e h;1;c
+d:;a b;i;2;a b d
+e:;b c;g;2;b c e
+f:;a;i;2;a f
+g:;e;i j;3;b c e g
+h:;c;j l;2;c h
+i:;d f;k;7;c e g i
+j:;g h;k l;7;b e g j
+k:;i j;;8;g i j k
+l:;h j;;8;e g j l
+//DELAY
+1
