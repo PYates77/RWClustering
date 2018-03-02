@@ -1,8 +1,7 @@
 #FILE: RWGUI.py
 #AUTHOR: Akshay Nagendra <akshaynag@gatech.edu>
-#DESCRIPTION: Python file intended to generate a directed graph from an input file (e,g, "input_graph.txt")
-#REQUIREMENT: Need an input file specified in INPUT_GRAPH_FILENAME
-#See "input_graph.txt" for an example
+#DESCRIPTION: Python file intended to generate a directed graph from an input file that is specified by the cmdline, or the default will be used
+#See "input_graph_lecture.dmp" for an example
 
 
 import turtle 
@@ -11,9 +10,10 @@ import math
 import random
 import Tkinter as tkinter
 import time
+import sys
 
 #PARAMETERS THAT CAN BE CONFIGURED BY USER
-INPUT_GRAPH_FILENAME = "input_graph_lecture.txt"
+INPUT_GRAPH_FILENAME = "input_graph_lecture.dmp" #DEFAULT FILE
 DELAY = 1
 CURSOR_SIZE = 50
 GLOBAL_SKEW_X = 1.5*CURSOR_SIZE
@@ -236,7 +236,8 @@ def verifyPlacement(nList,eList):
 #END OF FUNCTIONS
     
     
-	
+if len(sys.argv) > 1:
+    INPUT_GRAPH_FILENAME = sys.argv[1]
 print "Parsing graph.txt"
 graphFile = open(INPUT_GRAPH_FILENAME,"r")
 nodeList = []
