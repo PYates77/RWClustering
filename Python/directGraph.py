@@ -11,34 +11,60 @@ import math
 import random
 import Tkinter as tkinter
 
+#PARAMETERS THAT CAN BE CONFIGURED BY USER
 INPUT_GRAPH_FILENAME = "input_graph.txt"
+DELAY = 1
 CURSOR_SIZE = 50
-GLOBAL_SKEW_X = 3*CURSOR_SIZE
+GLOBAL_SKEW_X = 1.5*CURSOR_SIZE
 GLOBAL_SKEW_Y = CURSOR_SIZE
-CANVAS_WIDTH = 800
-CANVAS_HEIGHT = 800
+CANVAS_DISPLAY_W = 850
+CANVAS_DISPLAY_H = 850
+CANVAS_WIDTH = 650
+CANVAS_HEIGHT = 650
+WINDOW_WIDTH = 1800
+WINDOW_HEIGHT = 900
+WINDOW_DIM = str(WINDOW_WIDTH) + "x" + str(WINDOW_HEIGHT)
 SCREEN_WIDTH = 2000
 SCREEN_HEIGHT = 2000
+TEXT_BUFFER = 10
+FONT_SIZE = 16
 SBUFFER = 20
 EBUFFER = 40
 Y_STEP = 2.5*CURSOR_SIZE
-DEGREE_FOR_CONFLICT = 7
+DEGREE_FOR_CONFLICT = 9
+SCROLLBAR_WIDTH = 16
+LABEL_WIDTH = int(1.25*FONT_SIZE)
+NUM_COLUMNS_TABLE = 5
+COLUMN_HEADERS = ["NODE","NODE DELAY","PI?","LABEL","CLUSTER"]
+
+
+TABLE_WIDTH = WINDOW_WIDTH - (CANVAS_DISPLAY_W + SCROLLBAR_WIDTH)
 
 root = tkinter.Tk()
 root.title("RW Clustering GUI")
-root.geometry("900x900")
-v = tkinter.Scrollbar(root, orient=tkinter.VERTICAL)
-h = tkinter.Scrollbar(root,orient=tkinter.HORIZONTAL)
+root.geometry(WINDOW_DIM)
+drawingFrame = tkinter.Frame(root)
+drawingFrame.place(x = 0, y = 0, width = CANVAS_DISPLAY_W+SCROLLBAR_WIDTH, height = CANVAS_DISPLAY_H+SCROLLBAR_WIDTH)
+v = tkinter.Scrollbar(drawingFrame, orient=tkinter.VERTICAL)
+h = tkinter.Scrollbar(drawingFrame,orient=tkinter.HORIZONTAL)
 
-v.pack(side=tkinter.RIGHT,fill=tkinter.Y)
-h.pack(side=tkinter.BOTTOM,fill=tkinter.X)
+v.place(x = CANVAS_DISPLAY_W, y =0, width = SCROLLBAR_WIDTH, height = CANVAS_DISPLAY_H + SCROLLBAR_WIDTH)
+h.place(x=0, y = CANVAS_DISPLAY_H, width = CANVAS_DISPLAY_W + SCROLLBAR_WIDTH, height = SCROLLBAR_WIDTH)
+cv = tkinter.Canvas(drawingFrame,width=SCREEN_WIDTH,height=SCREEN_HEIGHT,yscrollcommand=v.set,xscrollcommand=h.set)
+cv.place(x = 0, y = 0, width = CANVAS_DISPLAY_W, height = CANVAS_DISPLAY_H)
+
+tableFrame = tkinter.Frame(root)
+tableFrame.place(x = CANVAS_DISPLAY_W + SCROLLBAR_WIDTH, y = 0, width = TABLE_WIDTH, height = WINDOW_HEIGHT)
+
+#myList = tkinter.Listbox(tableFrame)
+#for line in range(100):
+#   myList.insert(tkinter.END, "\tNODE NAME\tNODE LABEL\tNODE DELAY\tCLUSTER")
+#myList.place(x = 0, y = 0, width = TABLE_WIDTH, height = WINDOW_HEIGHT)
+
+#for i in range(1,101,2):
+#   myList.itemconfig(i, background="#ecf8f2")
 
 
-
-cv = tkinter.Canvas(root,width=SCREEN_WIDTH,height=SCREEN_HEIGHT,yscrollcommand=v.set,xscrollcommand=h.set)
-
-
-cv.pack(side=tkinter.LEFT,fill=tkinter.BOTH)
 v.config(command = cv.yview)
 h.config(command = cv.xview)
 cv.config(scrollregion=cv.bbox(tkinter.ALL))
@@ -46,6 +72,7 @@ cv.config(scrollregion=cv.bbox(tkinter.ALL))
 
 p = turtle.RawTurtle(cv)
 pScreen = p.getscreen()
+p.speed(0)
 #pScreen.setup(width=CANVAS_WIDTH, height=CANVAS_HEIGHT, startx=None, starty=None)
 pScreen.register_shape("Circle.gif")
 pScreen.screensize(SCREEN_WIDTH,SCREEN_HEIGHT)
@@ -68,11 +95,15 @@ class Node:
         self.circuitNets = []
         self.X = -1
         self.Y = -1
+        self.cluster = []
+        self.label = 0
     def printNodeInfo(self):
         print "NODE ", self.nodeID
         print "Nets Contained: ", self.circuitNets
         print "Ancestors: ", self.prevn
         print "Successors: ", self.nextn
+        print "Cluster(", self.nodeID, "): ", self.cluster
+        print "Label: ", self.label
         if self.X != -1 and self.Y != -1:
             print "X: ",self.X
             print "Y: ",self.Y
@@ -184,8 +215,8 @@ def drawNodes(cursor,nList):
         cursor.goto(n.X,n.Y)
         cursor.stamp()
         cursor.penup()
-        cursor.goto(n.X,n.Y-10)
-        cursor.write(n.nodeID,True,align="center",font=("Times New Roman",20,"normal"))
+        cursor.goto(n.X,n.Y-TEXT_BUFFER)
+        cursor.write(n.nodeID,True,align="center",font=("Times New Roman",FONT_SIZE,"normal"))
 	
 def verifyPlacement(nList,eList):
     """Helper function designed to verify placement of nodes onto screen for a directed acyclic graph (DAG)"""
@@ -209,7 +240,6 @@ graphFile = open(INPUT_GRAPH_FILENAME,"r")
 nodeList = []
 edgeList = []
 FLAG = ""
-delay = 1
 
 
 for line in graphFile:
@@ -228,77 +258,41 @@ for line in graphFile:
             newNode.nextn = sO2.group(4).split()
             nodeList.append(newNode)
     if (FLAG == "DELAY"):
-        delay = line
+        DELAY = line
+
+#Populate table of information
+for i in range(len(nodeList)+1): #Rows
+    for j in range(NUM_COLUMNS_TABLE): #Columns
+        b = tkinter.Label(tableFrame, relief=tkinter.RAISED, width=LABEL_WIDTH)
+        msg = ""
+        fontStyle = ""
+        if not i:
+            fontStyle = "bold"
+            msg = COLUMN_HEADERS.pop(0)
+        else:
+            if j == 0:
+                msg = nodeList[i-1].nodeID
+            if j == 1:
+                msg = DELAY
+            if j == 2:
+                if not nodeList[i-1].prevn:
+                    msg = "Y"
+                else:
+                    msg = "N"
+            if j == 3:
+                msg = nodeList[i-1].label
+            if j == 4:
+                msg = nodeList[i-1].cluster
+            fontStyle = "normal"
+        b.config(font=("Times New Roman", FONT_SIZE, fontStyle))
+        b.config(text=msg)
+        b.grid(row=i, column=j)
 
 sourceNodeList = []	
 for n in nodeList:
     if not n.prevn:
         sourceNodeList.append(n)
 
-
-
-# X_SRC_STEP = (RIGHT_X-LEFT_X)/len(sourceNodeList)
-
-# nodesToBePlaced = nodeList[:]
-# nodesPlaced = []
-
-# #Place Source Nodes
-# for i in range(0,len(sourceNodeList)):
-	# SRCX = 0;
-	# if (i%2 == 0):
-		# SRCX = LEFT_X+X_SRC_STEP*(math.floor(i/2))
-	# else:
-		# SRCX = RIGHT_X-X_SRC_STEP*(math.floor(i/2))
-	# p.goto(SRCX,TOP_Y)
-	# p.stamp()
-	# p.penup()
-	# p.goto(SRCX,TOP_Y-10)
-	# p.write(sourceNodeList[i].nodeID,True,align="center",font=("Times New Roman",20,"normal"))
-	# p.penup()
-	# nodesToBePlaced.pop(nodesToBePlaced.index(sourceNodeList[i]))
-	# sourceNodeList[i].X = SRCX
-	# sourceNodeList[i].Y = TOP_Y
-	# nodesPlaced.append(sourceNodeList[i])
-
-# CUR_Y = TOP_Y
-# #Place all next nodes
-# while nodesToBePlaced:
-	# toBePlaced = []
-	# for n in nodesToBePlaced:
-		# readyToPlace = True
-		# for pr in n.prev:
-			# np = retrieveNodeByID(nodeList,pr)
-			# if np not in nodesPlaced:
-				# readyToPlace = False
-		# if readyToPlace:
-			# toBePlaced.append(n)
-	# #Begin placement
-
-	# CUR_Y -= Y_STEP
-	# X_STEP = (RIGHT_X-LEFT_X)/len(toBePlaced)
-	# for i in range(0,len(toBePlaced)):
-		# SRCX = 0
-		# if (i%2==0):
-			# SRCX = LEFT_X+X_SRC_STEP*(math.floor(i/2))
-		# else:
-			# SRCX = RIGHT_X-X_SRC_STEP*(math.floor(i/2))
-		
-		# if (X_SRC_STEP > GLOBAL_SKEW):
-			# SRCX = SRCX + random.randint(-GLOBAL_SKEW,GLOBAL_SKEW)
-		# p.goto(SRCX,CUR_Y)
-		# p.stamp()
-		# p.penup()
-		# p.goto(SRCX,CUR_Y-10)
-		# p.write(toBePlaced[i].nodeID,True,align="center",font=("Times New Roman",20,"normal"))
-		# p.penup()
-		# nodesToBePlaced.pop(nodesToBePlaced.index(toBePlaced[i]))
-		# toBePlaced[i].X = SRCX
-		# toBePlaced[i].Y = CUR_Y
-		# nodesPlaced.append(toBePlaced[i])
-
-# nodeList = nodesPlaced
-# for nPlaced in nodeList:
-	# nPlaced.printNodeInfo()
 
 
 needToPlace = True
