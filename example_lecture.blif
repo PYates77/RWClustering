@@ -1,0 +1,24 @@
+.model lecture_circuit
+.inputs in0 in1 in2 
+.outputs out0 out1
+.wire_load_slope 0.00
+.names in0 in1 g0
+10 1
+.names in1 in2 g1
+01 1
+.names in0 g0 g2
+11 1
+.names g1 g3
+0 1
+.names in2 g4
+1 1
+.names g2 g0 g3 g5
+1-0 1
+01- 1
+.names g3 g4 g6
+10 1
+.names g5 g6 out0
+00 1
+.names g6 g4 out1
+11 1
+.end
