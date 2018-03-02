@@ -1,7 +1,7 @@
-#FILE: directGraph.py
+#FILE: RWGUI.py
 #AUTHOR: Akshay Nagendra <akshaynag@gatech.edu>
-#DESCRIPTION: Python file intended to generate a directed graph from an input file ("input_graph.txt")
-#REQUIREMENT: Need an input file called "input_graph.txt"
+#DESCRIPTION: Python file intended to generate a directed graph from an input file (e,g, "input_graph.txt")
+#REQUIREMENT: Need an input file specified in INPUT_GRAPH_FILENAME
 #See "input_graph.txt" for an example
 
 
