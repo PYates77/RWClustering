@@ -17,3 +17,11 @@ To Run on Linux Machine:
 
 
 (5) ./rw
+
+For running the GUI after the main C++ progrm generates an output file (let's call this file "graph.dmp")
+
+(1) cp graph.dmp Python/
+
+(2)cd Python/
+
+(3)python RWGUI.py graph.dmp
