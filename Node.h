@@ -10,14 +10,23 @@
 
 class Node {
 private:
-    char* id; //for debug printing
-    std::vector<Node> ins;
-    std::vector<Node> outs;
-    int delay; //ASSUME INTEGER DELAY
-    int label;
 public:
-    int getDelay(void);
+
     void computeLabel();
+    std::vector<Node> prev;
+    std::vector<Node> next;
+    int delay; //ASSUME INTEGER DELAY
+    int id;
+    bool visited;
+    int label;
+    Node(){
+        delay = 1;
+        visited = false;
+    }
+    Node(int d){
+        delay = d;
+        visited = false;
+    }
 };
 
 

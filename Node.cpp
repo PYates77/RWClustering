@@ -4,6 +4,6 @@
 
 #include "Node.h"
 
-int Node::getDelay() {
-   return delay;
-}
+//Node::Node() {
+//
+//}

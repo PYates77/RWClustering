@@ -12,7 +12,7 @@
 class Cluster {
 private:
     std::vector<Node> members;
-    int delay; 
+    int delay;
     //TODO: need lists of input/output Nodes? Clusters?
 };
 
