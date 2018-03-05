@@ -23,7 +23,13 @@ int main(int argc, char **argv) {
     int id = 0;
     for(std::vector::iterator it = master.begin(); it != master.end(); ++it){
         it->id = id++;
+        //apply initial labeling 
+        if(it->prev == NULL) it->label = it->delay;
+        else it->label = 0; 
     }
+
+
+    //////     COMPUTE DELAY MATRIX ////// 
 
     int* delay_matrix; //TODO: allocate me
 
@@ -48,6 +54,16 @@ int main(int argc, char **argv) {
         }
 
     }
+
+
+   //////      CALCULATE LABELS    ///////
+
+    for(std::vector::iterator it = master.begin(); it != master.end(); ++it){
+        //not including PIs
+        if(it->prev){
+            
+        }
+
 
     std::vector<Node> L = POs; //L starts equal to the PO set
 
