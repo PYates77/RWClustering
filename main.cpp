@@ -69,22 +69,30 @@ int main(int argc, char **argv) {
         // let l1 = max(label_v) of any PI node in cluster(v)
         // let l2 = max(label_v+delay) of any node remaining in S
         // label(v) = max(l1,l2)
+
+
     std::vector<Cluster> clusters;
     for(std::vector::iterator v = master.begin(); v != master.end(); ++v) {
-        //skip PIs (label(PI) = delay(pi))
+
+        //skip PIs (label(PI) = delay(pi) already implemented)
         if (v->prev) {
             std::set<Node, compare_lv> Gv;
-            v->predecessors_r(Gv);
+            v->predecessors_r(Gv); //recursively insert all predecessors (once and only once) into Gv
+
+            // calculate label_v(x)
             for(std::set::iterator x = Gv.begin(); x != Gv.end(); ++x){
                 x->label_v = x->label + delay_matrix[N*x->id+v->id];
             }
-            std::set<Node, compare_lv> S = Gv; // todo: can't we just use Gv as S? Do they have to be seperate variables?
+            std::set<Node, compare_lv> S = Gv; // todo: can't we just use Gv as S, since Gv is already sorted? Do they have to be separate variables?
             Cluster c;
-            for(int i=0; i<max_cluster_size; ++i){
+
+            // pop first element from S and add to c until max cluster size reached
+            for(int i=0; i<max_cluster_size; ++i) {
                 c.members.push_back(*S.begin());
                 S.erase(S.begin());
             }
-            v->label = c.max();
+
+            v->label = c.max(); //Cluster::max returns label(v) as the max of all label_v+delay (of non PIs) and label_v (of PIs)
             clusters.push_back(c);
         }
     }
