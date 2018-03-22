@@ -7,8 +7,10 @@
 
 
 #include <vector>
+#include <set>
 #include "Cluster.h"
 
+struct compare_lv;
 class Node {
 private:
 public:
@@ -21,8 +23,8 @@ public:
     int id;
     bool visited;
     int label;
-    int s_label;
-    
+    int label_v;
+
     Node(){
         delay = 1;
         visited = false;
@@ -31,6 +33,7 @@ public:
         delay = d;
         visited = false;
     }
+    void predecessors_r(std::set<Node>&);
 };
 
 

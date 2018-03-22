@@ -9,10 +9,10 @@
 #include <vector>
 #include "Node.h"
 
-class Cluster {
-private:
+struct Cluster {
     std::vector<Node> members;
     int delay;
+    int max(void);
     //TODO: need lists of input/output Nodes? Clusters?
 };
 

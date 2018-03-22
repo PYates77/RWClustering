@@ -3,6 +3,7 @@
 // TODO: Create a license or whatever up here so that lovely students after us can reference our nice code
 //
 #include <iostream>
+#include <set>
 #include "Node.h"
 
 int max_cluster_size = 20; //default value = 20
@@ -23,13 +24,15 @@ int main(int argc, char **argv) {
     int id = 0;
     for(std::vector::iterator it = master.begin(); it != master.end(); ++it){
         it->id = id++;
-        //apply initial labeling 
+        //apply initial labeling (PI label = delay, non-PI label = 0)
         if(it->prev == NULL) it->label = it->delay;
         else it->label = 0; 
     }
 
 
-    //////     COMPUTE DELAY MATRIX ////// 
+    //////     COMPUTE DELAY MATRIX //////
+
+    // delay_matrix[x][y] = max delay from output x to output y (node delay only)
 
     int* delay_matrix; //TODO: allocate me
 
@@ -41,7 +44,7 @@ int main(int argc, char **argv) {
     std::vector<Node>::const_iterator p; //the node's predecessors
     for(r = master.begin(); r != master.end();++r){
         //delay between a node and any previous node (and itself) is 0
-        for(c = master.begin(); c != std::next(r,1); ++c) delay_matrix[N * r->id + c->id] = 0;
+        for(c = master.begin(); c != std::next(r,1); ++c) delay_matrix[N * r->id + c->id] = 0; //c!=next(r,1) is because c<=r doesn't work
         for(c = r; c != master.end(); ++c) {
             //max_delay(r,c) = max( max_delay(r, c->prev) )
             int max=0;
@@ -58,14 +61,34 @@ int main(int argc, char **argv) {
 
    //////      CALCULATE LABELS    ///////
 
-    for(std::vector::iterator it = master.begin(); it != master.end(); ++it){
-        //not including PIs
-        if(it->prev){
-            
+    // Let Gv be the subgraph containing v and all its predecessors
+        // label_v(x) for all x in Gv\{v}
+            // label_v(x) = label(x) + delay_matrix[x][v]
+    // Let S be the set of nodes in Gv\{v} sorted by decreasing label_v values
+        // remove node one-by-one in sorted order  from S and add it to cluster(v) until size constraint is met
+        // let l1 = max(label_v) of any PI node in cluster(v)
+        // let l2 = max(label_v+delay) of any node remaining in S
+        // label(v) = max(l1,l2)
+    std::vector<Cluster> clusters;
+    for(std::vector::iterator v = master.begin(); v != master.end(); ++v) {
+        //skip PIs (label(PI) = delay(pi))
+        if (v->prev) {
+            std::set<Node, compare_lv> Gv;
+            v->predecessors_r(Gv);
+            for(std::set::iterator x = Gv.begin(); x != Gv.end(); ++x){
+                x->label_v = x->label + delay_matrix[N*x->id+v->id];
+            }
+            std::set<Node, compare_lv> S = Gv; // todo: can't we just use Gv as S? Do they have to be seperate variables?
+            Cluster c;
+            for(int i=0; i<max_cluster_size; ++i){
+                c.members.push_back(*S.begin());
+                S.erase(S.begin());
+            }
+            v->label = c.max();
+            clusters.push_back(c);
         }
+    }
 
-
-    std::vector<Node> L = POs; //L starts equal to the PO set
 
     return 0;
 }
@@ -75,7 +98,7 @@ void addToMaster(std::vector<Node> &m, Node &n){
     for(it = n.prev.begin(); it != n.prev.end(); ++it){
         if(!it->visited) addToMaster(m, *it); //place ALL predecessors of n onto the list first
     }
-    if(n.visited) std::cout << "ERROR: This should never happen. The programmers are clearly morons!" << std::endl;
+    if(n.visited) std::cout << "ERROR: This should never happen. The programmers are clearly morons!" << std::endl; //todo: better error message
     else m.push_back(n); //push n onto the list
     n.visited = true;
     for(it = n.next.begin(); it != n.next.end(); ++it){
