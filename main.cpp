@@ -3,6 +3,7 @@
 // TODO: Create a license or whatever up here so that lovely students after us can reference our nice code
 //
 #include <iostream>
+#include <fstream>
 #include <set>
 #include "Node.h"
 #include "BLIFParser.h"
