@@ -3,9 +3,11 @@
 // TODO: Create a license or whatever up here so that lovely students after us can reference our nice code
 //
 #include <iostream>
+#include <fstream>
 #include <set>
 #include "Node.h"
 #include "Cluster.h"
+#include "BLIFParser.h"
 
 int max_cluster_size = 20; //default value = 20
 
