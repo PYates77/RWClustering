@@ -5,10 +5,13 @@
 #include <iostream>
 #include <set>
 #include "Node.h"
+#include "BLIFParser.h"
 
 int max_cluster_size = 20; //default value = 20
 
 void addToMaster(std::vector<Node> &m, Node &n);
+
+
 
 int main(int argc, char **argv) {
     std::cout << "Hello, RWClustering World!" << std::endl;
