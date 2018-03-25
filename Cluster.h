@@ -9,6 +9,8 @@
 #include <vector>
 #include "Node.h"
 
+class Node;
+
 struct Cluster {
     std::vector<Node> members;
     int delay;

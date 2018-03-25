@@ -8,9 +8,9 @@
 
 #include <vector>
 #include <set>
-#include "Cluster.h"
 
 struct compare_lv;
+
 class Node {
 private:
 public:
@@ -18,7 +18,6 @@ public:
     void computeLabel();
     std::vector<Node> prev;
     std::vector<Node> next;
-    Cluster *cluster;
     int delay; //ASSUME INTEGER DELAY
     int id;
     bool visited;
@@ -33,8 +32,15 @@ public:
         delay = d;
         visited = false;
     }
-    void predecessors_r(std::set<Node>&);
+    void predecessors_r(std::set<Node, compare_lv>&);
 };
 
+// for ordering nodes in S set
+struct compare_lv{
+    bool operator() (const Node& lhs, const Node& rhs) const {
+        return lhs.label_v > rhs.label_v; //sorting should be in DECREASING order
+        // todo: ensure ordering is correct
+    }
+};
 
 #endif //RW_NODE_H

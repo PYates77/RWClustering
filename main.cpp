@@ -5,6 +5,7 @@
 #include <iostream>
 #include <set>
 #include "Node.h"
+#include "Cluster.h"
 
 int max_cluster_size = 20; //default value = 20
 
@@ -22,11 +23,11 @@ int main(int argc, char **argv) {
     addToMaster(master, PIs.front()); //recursively add all of the nodes to the master list in topological order
     //number the nodes in order for use in indexing the delay_matrix array
     int id = 0;
-    for(std::vector::iterator it = master.begin(); it != master.end(); ++it){
+    for(std::vector<Node>::iterator it = master.begin(); it != master.end(); ++it){
         it->id = id++;
         //apply initial labeling (PI label = delay, non-PI label = 0)
-        if(it->prev == NULL) it->label = it->delay;
-        else it->label = 0; 
+        if(!it->prev.empty()) it->label = 0;
+        else it->label = it->delay;
     }
 
 
@@ -72,18 +73,22 @@ int main(int argc, char **argv) {
 
 
     std::vector<Cluster> clusters;
-    for(std::vector::iterator v = master.begin(); v != master.end(); ++v) {
+    for(std::vector<Node>::iterator v = master.begin(); v != master.end(); ++v) {
 
         //skip PIs (label(PI) = delay(pi) already implemented)
-        if (v->prev) {
+        if (!v->prev.empty()) {
             std::set<Node, compare_lv> Gv;
             v->predecessors_r(Gv); //recursively insert all predecessors (once and only once) into Gv
 
+            // copy Gv to S, a vector. Useful because we cannot directly modify set members.
+            std::vector<Node> S;
+            std::copy(Gv.begin(), Gv.end(), std::back_inserter(S));
+
             // calculate label_v(x)
-            for(std::set::iterator x = Gv.begin(); x != Gv.end(); ++x){
+            for(std::vector<Node>::iterator x = S.begin(); x != S.end(); ++x){
                 x->label_v = x->label + delay_matrix[N*x->id+v->id];
             }
-            std::set<Node, compare_lv> S = Gv; // todo: can't we just use Gv as S, since Gv is already sorted? Do they have to be separate variables?
+
             Cluster c;
 
             // pop first element from S and add to c until max cluster size reached
