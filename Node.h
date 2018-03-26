@@ -8,13 +8,13 @@
 
 #include <vector>
 #include <set>
+#include <string>
 
 struct compare_lv;
 
 class Node {
 private:
 public:
-
     void computeLabel();
     std::vector<Node> prev;
     std::vector<Node> next;
@@ -23,6 +23,11 @@ public:
     bool visited;
     int label;
     int label_v;
+
+    bool isPI = false;
+    bool isPO = false;
+    std::string nodeType = "INVALID";
+
 
     Node(){
         delay = 1;

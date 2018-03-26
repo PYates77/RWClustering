@@ -10,11 +10,16 @@
 #include "BLIFParser.h"
 
 int max_cluster_size = 20; //default value = 20
+std::string BLIFFile = "../example_lecture.blif";
 
 void addToMaster(std::vector<Node> &m, Node &n);
 
 int main(int argc, char **argv) {
     std::cout << "Hello, RWClustering World!" << std::endl;
+    std::vector<Node> rawNodeList;
+    parseBLIF(BLIFFile,rawNodeList);
+
+    /*
     //todo: interpret command-line arguments for input file and cluster size limit
     std::vector<Node> PIs;
     std::vector<Node> POs;
@@ -103,7 +108,7 @@ int main(int argc, char **argv) {
             clusters.push_back(c);
         }
     }
-
+    */
 
     return 0;
 }

@@ -2,6 +2,7 @@
 .inputs in0 in1 in2 
 .outputs out0 out1
 .wire_load_slope 0.00
+.latch     g4130 g678  0
 .names in0 in1 g0
 10 1
 .names in1 in2 g1
