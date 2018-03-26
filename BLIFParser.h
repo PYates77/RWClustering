@@ -60,6 +60,17 @@ void parseBLIF(std::string filename, std::vector<Node> rawNodeList){
     }
 }
 
+Node* findNodeByStr(std::string nodeID, std::vector<Node>& nodeList){
+    //DESCRIPTION: Helper function to retrieve a node's pointer
+    for (std::vector<Node>::iterator in = nodeList.begin(); in < nodeList.end(); ++in){
+        if (in->strID == nodeID){
+            //Match found!
+            return &(*in);
+        }
+    }
+    return NULL;
+}
+
 
 #endif //RW_BLIFPARSER_H
 

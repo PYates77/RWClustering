@@ -27,7 +27,7 @@ public:
     bool isPI = false;
     bool isPO = false;
     std::string nodeType = "INVALID";
-
+    std::string strID = "INVALID";
 
     Node(){
         delay = 1;
