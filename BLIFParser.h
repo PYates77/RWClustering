@@ -42,10 +42,14 @@ void parseBLIF(std::string filename, std::vector<Node> rawNodeList){
                         continue;
                     }
                     if (!argCount) {
-
+                        Node n;
+                        n.strID = signalName;
+                        //TODO: Setup prev and next nodes
                     }
                     else {
-
+                        Node n(0);
+                        n.strID = signalName;
+                        //TODO: Setup prev and next nodes
                     }
                     signalName = strtok(NULL," ");
                     ++argCount;
