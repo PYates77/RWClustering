@@ -16,8 +16,8 @@ class Node {
 private:
 public:
     void computeLabel();
-    std::vector<Node> prev;
-    std::vector<Node> next;
+    std::vector<Node *> prev;
+    std::vector<Node *> next;
     int delay; //ASSUME INTEGER DELAY
     int id;
     bool visited;
@@ -37,7 +37,7 @@ public:
         delay = d;
         visited = false;
     }
-    void predecessors_r(std::set<Node, compare_lv>&);
+    void predecessors_r(std::set<Node *, compare_lv>&);
 };
 
 // for ordering nodes in S set

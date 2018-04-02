@@ -12,7 +12,7 @@
 class Node;
 
 struct Cluster {
-    std::vector<Node> members;
+    std::vector<Node *> members;
     int delay;
     int max(void);
     //TODO: need lists of input/output Nodes? Clusters?

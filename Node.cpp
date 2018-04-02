@@ -6,10 +6,10 @@
 
 
 // recursively inserts all predecessors into vector
-void Node::predecessors_r(std::set<Node, compare_lv>& V){
-   for(std::vector<Node>::iterator it; it != prev.end(); ++it){
+void Node::predecessors_r(std::set<Node *, compare_lv>& V){
+   for(std::vector<Node *>::iterator it = prev.begin(); it != prev.end(); ++it){
        V.insert(*it); // will only insert if not already in V
-       it->predecessors_r(V);
+       (*it)->predecessors_r(V);
    }
 }
 //Node::Node() {
