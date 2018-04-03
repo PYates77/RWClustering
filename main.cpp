@@ -44,7 +44,8 @@ int main(int argc, char **argv) {
 
     // delay_matrix[x][y] = max delay from output x to output y (node delay only)
 
-    int* delay_matrix; //TODO: allocate me
+    int* delay_matrix = new int[N*N]; // Delay matrix is NxN square matrix.
+    //todo: convert this into a sparse matrix
 
     //TODO: double check this delay_matrix filling algorithm for correctness
     //delay_matrix[N*r+c] (aka delay_matrix[r][c]) represents max delay from node r to node c
@@ -111,7 +112,7 @@ int main(int argc, char **argv) {
         }
     }
 
-
+    delete[] delay_matrix;
     return 0;
 }
 
