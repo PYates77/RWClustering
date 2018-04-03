@@ -42,8 +42,8 @@ public:
 
 // for ordering nodes in S set
 struct compare_lv{
-    bool operator() (const Node& lhs, const Node& rhs) const {
-        return lhs.label_v > rhs.label_v; //sorting should be in DECREASING order
+    bool operator() (const Node* lhs, const Node* rhs) const {
+        return lhs->label_v > rhs->label_v; //sorting should be in DECREASING order
         // todo: ensure ordering is correct
     }
 };

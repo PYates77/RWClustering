@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
             //max_delay(r,c) = max( max_delay(r, c->prev) )
             int max=0;
             int prev_delay;
-            for(p = (*c)->prev.begin(); p != (*c)->prev.end(); +p){
+            for(p = (*c)->prev.begin(); p != (*c)->prev.end(); ++p){
                 prev_delay = delay_matrix[N*(*r)->id+(*p)->id];
                 if(prev_delay > max) max = prev_delay;
             }
