@@ -1,5 +1,5 @@
 .model lecture_circuit
-.inputs in0 in1 in2 
+.inputs in0 in1 in2
 .outputs out0 out1
 .wire_load_slope 0.00
 .latch     g4130 g678  0

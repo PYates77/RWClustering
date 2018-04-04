@@ -20,6 +20,7 @@ Node* findNodeByStr(std::string nodeID, std::vector<Node>& nodeList){
 }
 
 void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
+    //preliminary run
     std::cout << "Filename: " << filename << std::endl;
     std::ifstream blifFile;
     blifFile.open(filename);
@@ -31,65 +32,104 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
         std::string gateStr = ".names";
         std::string inputStr = ".inputs";
         std::string outputStr = ".outputs";
+        std::string prevStr = "";
         while(std::getline(blifFile,line)){
-            //std::cout << "Line from File: " << line << std::endl;
-            //std::cout << "Line from File C Style: " << line.c_str() << std::endl;
             char * signalName = NULL;
-            std::size_t found = line.find(inputStr);
-            if (found != std::string::npos){
-                continue;
-            }
-            found = line.find(outputStr);
-            if (found != std::string::npos){
-                continue;
-            }
-            found = line.find(latchStr);
-            if (found != std::string::npos){
-                char * lineCStyle = strdup(line.c_str());
-                signalName = strtok(lineCStyle," ");
-                int argCount = 0;
-                while (signalName != NULL && argCount < 2){
-                    if (latchStr == signalName){
-                        signalName = strtok(NULL," ");
-                        continue;
+            char * lineCStyle = strdup(line.c_str());
+            signalName = strtok(lineCStyle," ");
+            if (std::string(signalName) == inputStr || prevStr == inputStr){
+                if (prevStr == "") {
+                    signalName = strtok(NULL, " ");
+                }
+                prevStr = "";
+                while (signalName != NULL){
+                    if (std::string(signalName) == "\\"){
+                        prevStr = inputStr;
                     }
+                    else {
+                        //std::cout << "ISignal Parsed: " << std::string(signalName) << std::endl;
+                        Node n(0);
+                        n.isPI = true;
+                        n.isPO = false;
+                        n.nodeType = PI;
+                        n.strID = std::string(signalName);
+                        rawNodeList.push_back(n);
+                    }
+                    signalName = strtok(NULL," ");
+                }
+                continue;
+            }
+            if (std::string(signalName) == outputStr || prevStr == outputStr){
+                if (prevStr == "") {
+                    signalName = strtok(NULL, " ");
+                }
+                prevStr = "";
+                while (signalName != NULL){
+                    if (std::string(signalName) == "\\"){
+                        prevStr = outputStr;
+                    }
+                    else {
+                        //std::cout << "ISignal Parsed: " << std::string(signalName) << std::endl;
+                        Node n;
+                        n.isPI = false;
+                        n.isPO = true;
+                        n.nodeType = PO;
+                        n.strID = std::string(signalName);
+                        rawNodeList.push_back(n);
+                    }
+                    signalName = strtok(NULL," ");
+                }
+                continue;
+            }
+            if (std::string(signalName) == latchStr){
+                prevStr = "";
+                int argCount = 0;
+                signalName = strtok(NULL," ");
+                while (signalName != NULL && argCount < 2){
                     //std::cout << "Signal Parsed: " << std::string(signalName) + "_LATCH" << std::endl;
                     if (!argCount) {
                         //Input of Latch becomes PO
                         Node n;
-                        n.strID = std::string(signalName) + "_LATCH";
+                        n.strID = std::string(signalName) + "_L";
                         n.nodeType = PO;
                         n.isPO = true;
-                        if (findNodeByStr(std::string(signalName),rawNodeList) == NULL){
-                            //no node as such exists thus far so just create it and we can fill it in later
-                            Node prevGate;
-                            prevGate.strID = std::string(signalName);
-                            rawNodeList.push_back(prevGate);
-                        }
-                        Node *prevGPtr = findNodeByStr(std::string(signalName),rawNodeList);
-                        //now the previous driving gate will exist in the list
-                        n.prev.push_back(prevGPtr);
-                        std::cout << std::hex << &rawNodeList.at(0) << std::endl;
+                        n.isPI = false;
                         rawNodeList.push_back(n);
-                        std::cout << std::hex << &rawNodeList.at(0) << std::endl;
                     }
                     else {
                         //Output of Latch becomes PI
                         Node n(0);
-                        n.strID = std::string(signalName) + "_LATCH";
+                        n.strID = std::string(signalName) + "_L";
                         n.nodeType = PI;
-                        //TODO: Setup prev and next nodes
+                        n.isPI = true;
+                        n.isPO = false;
+                        rawNodeList.push_back(n);
                     }
                     signalName = strtok(NULL," ");
                     ++argCount;
                 }
                 continue;
             }
-            found = line.find(gateStr);
-            if (found != std::string::npos){
+            if (std::string(signalName) == gateStr){
+                prevStr = "";
+                Node n;
+                n.strID = line;
+                n.nodeType = GATE;
+                rawNodeList.push_back(n);
                 continue;
             }
         }
+    }
+
+    //secondary run
+    blifFile.open(filename);
+    line = "";
+    if (blifFile.is_open()){
+
+    }
+    else {
+        //ERROR
+        std::cout <<"Error opening " << filename << " for secondary pass" << std::endl;
     }
 }
 

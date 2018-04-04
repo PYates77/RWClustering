@@ -12,7 +12,7 @@
 
 struct compare_lv;
 
-enum nType {
+enum nType {  //TODO: RIP OUT LATER (DEBUG)
     PI,
     PO,
     GATE,
@@ -33,8 +33,8 @@ public:
 
     bool isPI = false;
     bool isPO = false;
-    nType nodeType = INVALID;
-    std::string strID = "INVALID";
+    nType nodeType = INVALID;       //TODO: RIP OUT LATER (DEBUG)
+    std::string strID = "INVALID";  //TODO: RIP OUT LATER (DEBUG)
 
     Node(){
         delay = 1;
