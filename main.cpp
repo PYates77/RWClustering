@@ -20,20 +20,29 @@ int main(int argc, char **argv) {
     parseBLIF(BLIFFile,rawNodeList);
     std::cout << "Parsing Complete" << std::endl;
 
-    /* TODO: PAUL, THE MAIN CODE IS CURRENTLY COMMENTED OUT DUE TO A RUNTIME ERROR
+    // TODO: PAUL, THE MAIN CODE IS CURRENTLY COMMENTED OUT DUE TO A RUNTIME ERROR
     //todo: interpret command-line arguments for input file and cluster size limit
-    //todo: parse rawNodeList and add relevant nodes to PIs and POs
     // REQUIREMENT: All arrays containing node objects MUST point to rawNodeList. No copies of Nodes may be made at any time.
     std::vector<Node *> PIs;
     std::vector<Node *> POs;
-    int N; //the number of total nodes
-    //todo: construct DAG from BLIF a-la PODEM
+    for(auto it = rawNodeList.begin(); it < rawNodeList.end(); ++it){
+        if(it->isPI){
+            PIs.push_back(&*it);
+        }
+        else if(it->isPO){
+            POs.push_back(&*it);
+        }
+    }
+
+    std::cout << "Populated PI and PO lists" << std::endl;
+
+    int N = rawNodeList.size(); //the number of total nodes
 
     std::vector<Node *> master;
     addToMaster(master, PIs.front()); //recursively add all of the nodes to the master list in topological order
     //number the nodes in order for use in indexing the delay_matrix array
     int id = 0;
-    for(std::vector<Node *>::iterator it = master.begin(); it != master.end(); ++it){
+    for(auto it = master.begin(); it != master.end(); ++it){
         (*it)->id = id++;
         //apply initial labeling (PI label = delay, non-PI label = 0)
         if(!(*it)->prev.empty()) (*it)->label = 0;
@@ -70,6 +79,7 @@ int main(int argc, char **argv) {
 
     }
 
+    std::cout << "Delay Matrix Calculation Complete" << std::endl;
 
    //////      CALCULATE LABELS    ///////
 
@@ -84,7 +94,7 @@ int main(int argc, char **argv) {
 
 
     std::vector<Cluster> clusters;
-    for(std::vector<Node *>::iterator v = master.begin(); v != master.end(); ++v) {
+    for(auto v = master.begin(); v != master.end(); ++v) {
 
         //skip PIs (label(PI) = delay(pi) already implemented)
         if (!(*v)->prev.empty()) {
@@ -96,7 +106,7 @@ int main(int argc, char **argv) {
             std::copy(Gv.begin(), Gv.end(), std::back_inserter(S));
 
             // calculate label_v(x)
-            for(std::vector<Node *>::iterator x = S.begin(); x != S.end(); ++x){
+            for(auto x = S.begin(); x != S.end(); ++x){
                 (*x)->label_v = (*x)->label + delay_matrix[N*(*x)->id+(*v)->id];
             }
 
@@ -113,9 +123,13 @@ int main(int argc, char **argv) {
         }
     }
 
+    std::cout << "Calculation of Labels and Clusters Complete" << std::endl;
+
+    //todo: output to file and possibly GUI
+
     delete[] delay_matrix;
 
-    */
+
     return 0;
 }
 
