@@ -12,6 +12,13 @@
 
 struct compare_lv;
 
+enum nType {
+    PI,
+    PO,
+    GATE,
+    INVALID
+};
+
 class Node {
 private:
 public:
@@ -26,7 +33,7 @@ public:
 
     bool isPI = false;
     bool isPO = false;
-    std::string nodeType = "INVALID";
+    nType nodeType = INVALID;
     std::string strID = "INVALID";
 
     Node(){

@@ -18,8 +18,9 @@ int main(int argc, char **argv) {
     std::cout << "Hello, RWClustering World!" << std::endl;
     std::vector<Node> rawNodeList;
     parseBLIF(BLIFFile,rawNodeList);
+    std::cout << "Parsing Complete" << std::endl;
 
-
+    /* TODO: PAUL, THE MAIN CODE IS CURRENTLY COMMENTED OUT DUE TO A RUNTIME ERROR
     //todo: interpret command-line arguments for input file and cluster size limit
     //todo: parse rawNodeList and add relevant nodes to PIs and POs
     // REQUIREMENT: All arrays containing node objects MUST point to rawNodeList. No copies of Nodes may be made at any time.
@@ -113,6 +114,8 @@ int main(int argc, char **argv) {
     }
 
     delete[] delay_matrix;
+
+    */
     return 0;
 }
 
