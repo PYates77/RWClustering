@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
     parseBLIF(BLIFFile,rawNodeList);
     std::cout << "Parsing Complete" << std::endl;
 
-    // TODO: PAUL, THE MAIN CODE IS CURRENTLY COMMENTED OUT DUE TO A RUNTIME ERROR
     //todo: interpret command-line arguments for input file and cluster size limit
     // REQUIREMENT: All arrays containing node objects MUST point to rawNodeList. No copies of Nodes may be made at any time.
     std::vector<Node *> PIs;

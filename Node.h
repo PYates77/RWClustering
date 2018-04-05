@@ -28,13 +28,14 @@ public:
     int delay; //ASSUME INTEGER DELAY
     int id;
     bool visited;
-    int label;
+    int label = 0;
     int label_v;
 
     bool isPI = false;
     bool isPO = false;
-    nType nodeType = INVALID;       //TODO: RIP OUT LATER (DEBUG)
     std::string strID = "INVALID";  //TODO: RIP OUT LATER (DEBUG)
+    std::string procStr = ""; //used for second run through during BLIF parsing
+    Node *addr = nullptr;
 
     Node(){
         delay = 1;

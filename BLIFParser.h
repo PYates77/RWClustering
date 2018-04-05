@@ -16,7 +16,19 @@ Node* findNodeByStr(std::string nodeID, std::vector<Node>& nodeList){
             return &(*in);
         }
     }
-    return NULL;
+    return nullptr;
+}
+
+std::vector<std::string> delimStr(std::string line,std::string delim){
+    std::size_t pos = 0;
+    std::vector<std::string> result;
+    while ((pos=line.find_first_of(delim)) != std::string::npos){
+        std::string subStr = line.substr(0,pos);
+        result.push_back(subStr);
+        line.erase(0,subStr.length() + delim.length());
+    }
+    result.push_back(line);
+    return result;
 }
 
 void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
@@ -52,7 +64,6 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
                         Node n(0);
                         n.isPI = true;
                         n.isPO = false;
-                        n.nodeType = PI;
                         n.strID = std::string(signalName);
                         rawNodeList.push_back(n);
                     }
@@ -74,7 +85,6 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
                         Node n;
                         n.isPI = false;
                         n.isPO = true;
-                        n.nodeType = PO;
                         n.strID = std::string(signalName);
                         rawNodeList.push_back(n);
                     }
@@ -87,12 +97,10 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
                 int argCount = 0;
                 signalName = strtok(NULL," ");
                 while (signalName != NULL && argCount < 2){
-                    //std::cout << "Signal Parsed: " << std::string(signalName) + "_LATCH" << std::endl;
                     if (!argCount) {
                         //Input of Latch becomes PO
                         Node n;
-                        n.strID = std::string(signalName) + "_L";
-                        n.nodeType = PO;
+                        n.strID = std::string(signalName) + "_OL";
                         n.isPO = true;
                         n.isPI = false;
                         rawNodeList.push_back(n);
@@ -100,8 +108,7 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
                     else {
                         //Output of Latch becomes PI
                         Node n(0);
-                        n.strID = std::string(signalName) + "_L";
-                        n.nodeType = PI;
+                        n.strID = std::string(signalName) + "_IL";
                         n.isPI = true;
                         n.isPO = false;
                         rawNodeList.push_back(n);
@@ -113,37 +120,53 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
             }
             if (std::string(signalName) == gateStr){
                 prevStr = "";
-                Node n;
-                n.strID = line;
-                n.nodeType = GATE;
-                n.isPO = false;
-                n.isPI = false;
-                rawNodeList.push_back(n);
-                continue;
+                std::vector<std::string> sigArgs = delimStr(line," ");
+                Node *gateNode = findNodeByStr(sigArgs.at(sigArgs.size()-1),rawNodeList);
+                if (gateNode != nullptr){
+                    //this node has already been initiliazed as a primary output
+                    gateNode->procStr = line;
+                }
+                else {
+                    //this node has not already been initialized
+                    Node n;
+                    n.strID = sigArgs.at(sigArgs.size()-1);
+                    n.procStr = line;
+                    n.isPI = false;
+                    n.isPO = false;
+                    rawNodeList.push_back(n);
+                }
             }
         }
     }
 
     //fix the rawNodeList structure
-    /*
-    for (std::vector<Node>::iterator iN = rawNodeList.begin(); iN < rawNodeList.end(); ++iN){
-        if (!iN->isPO && !iN->isPI){
-            //TODO (AKSHAY): the node is a gate which we need to fix
-            char * strIDCStyle = strdup(iN->strID.c_str());
-            char * signalName = strtok(strIDCStyle," ");
-            while (signalName != NULL){
-                if (std::string(signalName) == gateStr){
-                    continue;
-                }
-                signalName = strtok(NULL," ");
-            }
 
+    for (std::vector<Node>::iterator iN = rawNodeList.begin(); iN < rawNodeList.end(); ++iN){
+        iN->addr = &(*iN);
+        if (iN->procStr != ""){
+            //TODO (AKSHAY): the node is a gate which we need to fix
+            std::vector<std::string> nStrList = delimStr(iN->procStr," ");
+            for (std::vector<std::string>::iterator is = nStrList.begin()+1; is < nStrList.end()-1; ++is){
+                Node *driver = findNodeByStr(*is,rawNodeList);
+                if (driver != nullptr){
+                    iN->prev.push_back(driver);
+                    driver->next.push_back(&(*iN));
+                }
+                else {
+                    std::cout << "Error: Driver not found" << std::endl;
+                    exit(-1);
+                }
+
+            }
         }
-        if (iN->strID.find("_L") != std::string::npos){
-            //TODO (AKSHAY): the node is a latch which we need to setup correctly
+        else if (iN->strID.find("_IL") != std::string::npos){
+            //TODO (AKSHAY): the node is a PI latch which we need to setup correctly
+        }
+        else if (iN->strID.find("_OL") != std::string::npos){
+            //TODO (AKSHAY): the node is a PO latch which we need to setup correctly
         }
     }
-     */
+
 }
 
 
