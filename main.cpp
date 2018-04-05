@@ -111,8 +111,9 @@ int main(int argc, char **argv) {
 
             Cluster c;
 
-            // pop first element from S and add to c until max cluster size reached
+            // pop first element from S and add to c until max cluster size reached or S is empty
             for(int i=0; i<max_cluster_size; ++i) {
+                if(S.size() == 0) break;
                 c.members.push_back(*S.begin());
                 S.erase(S.begin());
             }
@@ -133,13 +134,16 @@ int main(int argc, char **argv) {
 }
 
 void addToMaster(std::vector<Node *> &m, Node *n){
+    if(n->visited) {
+        std::cout << "ERROR:Attempted to add a visited node to master. This should never happen!" << std::endl;
+        return;
+    }
+    n->visited = true;
     std::vector<Node *>::iterator it;
     for(it = n->prev.begin(); it != n->prev.end(); ++it){
         if(!(*it)->visited) addToMaster(m, *it); //place ALL predecessors of n onto the list first
     }
-    if(n->visited) std::cout << "ERROR: This should never happen. The programmers are clearly morons!" << std::endl; //todo: better error message
-    else m.push_back(n); //push n onto the list
-    n->visited = true;
+    m.push_back(n); //push n onto the list
     for(it = n->next.begin(); it != n->next.end(); ++it){
         if(!(*it)->visited) addToMaster(m, *it); // place all unvisited successors of n onto the list
     }
