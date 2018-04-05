@@ -26,13 +26,14 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
     blifFile.open(filename);
     std::string line;
 
+    std::string latchStr = ".latch";
+    std::string gateStr = ".names";
+    std::string inputStr = ".inputs";
+    std::string outputStr = ".outputs";
+    std::string prevStr = "";
+
     if (blifFile.is_open()){
         //succesful file opening
-        std::string latchStr = ".latch";
-        std::string gateStr = ".names";
-        std::string inputStr = ".inputs";
-        std::string outputStr = ".outputs";
-        std::string prevStr = "";
         while(std::getline(blifFile,line)){
             char * signalName = NULL;
             char * lineCStyle = strdup(line.c_str());
@@ -115,22 +116,34 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
                 Node n;
                 n.strID = line;
                 n.nodeType = GATE;
+                n.isPO = false;
+                n.isPI = false;
                 rawNodeList.push_back(n);
                 continue;
             }
         }
     }
 
-    //secondary run
-    blifFile.open(filename);
-    line = "";
-    if (blifFile.is_open()){
+    //fix the rawNodeList structure
+    /*
+    for (std::vector<Node>::iterator iN = rawNodeList.begin(); iN < rawNodeList.end(); ++iN){
+        if (!iN->isPO && !iN->isPI){
+            //TODO (AKSHAY): the node is a gate which we need to fix
+            char * strIDCStyle = strdup(iN->strID.c_str());
+            char * signalName = strtok(strIDCStyle," ");
+            while (signalName != NULL){
+                if (std::string(signalName) == gateStr){
+                    continue;
+                }
+                signalName = strtok(NULL," ");
+            }
 
+        }
+        if (iN->strID.find("_L") != std::string::npos){
+            //TODO (AKSHAY): the node is a latch which we need to setup correctly
+        }
     }
-    else {
-        //ERROR
-        std::cout <<"Error opening " << filename << " for secondary pass" << std::endl;
-    }
+     */
 }
 
 
