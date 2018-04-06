@@ -40,6 +40,19 @@ int main(int argc, char **argv) {
         else (*it)->label = (*it)->delay;
     }
 
+    //ADDED BY AKSHAY
+    std::cout << "TOPOLOGICAL ORDER: [";
+    for (auto it = master.begin(); it != master.end(); ++it){
+        std::cout << (*it)->strID;
+        if (it == master.end() -1){
+            std::cout << "]" << std::endl;
+        }
+        else {
+            std::cout << ",";
+        }
+    }
+    std::cout << "REFERENCE LECTURE ORDER (EXAMPLE): [D,E,F,G,H,I,J,K,L]" << std::endl;
+
 
     //////     COMPUTE DELAY MATRIX //////
 
