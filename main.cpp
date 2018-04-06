@@ -83,39 +83,51 @@ int main(int argc, char **argv) {
         // let l2 = max(label_v+delay) of any node remaining in S
         // label(v) = max(l1,l2)
 
+    //todo: QUESTION. Do PI's get their own cluster? Does the vertex v need to be inserted into it's cluster?
+    // right now this algorithm is answering these questions with yes and yes
 
     std::vector<Cluster> clusters;
     for(auto v = master.begin(); v != master.end(); ++v) {
 
+        std::set<Node *, compare_lv> Gv;
+
         //skip PIs (label(PI) = delay(pi) already implemented)
         if (!(*v)->prev.empty()) {
-            std::set<Node *, compare_lv> Gv;
             (*v)->predecessors_r(Gv); //recursively insert all predecessors (once and only once) into Gv
-
-            // copy Gv to S, a vector. Useful because we cannot directly modify set members.
-            std::vector<Node *> S;
-            std::copy(Gv.begin(), Gv.end(), std::back_inserter(S));
-
-            // calculate label_v(x)
-            for(auto x = S.begin(); x != S.end(); ++x){
-                (*x)->label_v = (*x)->label + delay_matrix[N*(*x)->id+(*v)->id];
-            }
-
-            Cluster c;
-
-            // pop first element from S and add to c until max cluster size reached or S is empty
-            for(int i=0; i<max_cluster_size; ++i) {
-                if(S.size() == 0) break;
-                c.members.push_back(*S.begin());
-                S.erase(S.begin());
-            }
-
-            (*v)->label = c.max(); //Cluster::max returns label(v) as the max of all label_v+delay (of non PIs) and label_v (of PIs)
-            clusters.push_back(c);
         }
+
+        // copy Gv to S, a vector. Useful because we cannot directly modify set members.
+        std::vector<Node *> S;
+        std::copy(Gv.begin(), Gv.end(), std::back_inserter(S));
+
+        // calculate label_v(x)
+        for(auto x = S.begin(); x != S.end(); ++x){
+            (*x)->label_v = (*x)->label + delay_matrix[N*(*x)->id+(*v)->id];
+        }
+
+        Cluster cl((*v)->id);
+        cl.members.push_back(*v);
+
+        // pop first element from S and add to c until max cluster size reached or S is empty
+        for(int i=0; i<max_cluster_size; ++i) {
+            if(S.size() == 0) break;
+            cl.members.push_back(*S.begin());
+            S.erase(S.begin());
+        }
+
+        (*v)->label = cl.max(); //Cluster::max returns label(v) as the max of all label_v+delay (of non PIs) and label_v (of PIs)
+        clusters.push_back(cl);
     }
 
     std::cout << "Calculation of Labels and Clusters Complete" << std::endl;
+
+    for(auto cluster : clusters){
+        std::cout << "\nCluster " << cluster.id << " has: " << std::endl;
+        for(auto member : cluster.members){
+            std::cout << member->id << " (" << member->strID << ")" << std::endl;
+        }
+    }
+
 
     //todo: output to file and possibly GUI
 
@@ -127,7 +139,7 @@ int main(int argc, char **argv) {
 
 void addToMaster(std::vector<Node *> &m, Node *n){
     if(n->visited) {
-        std::cout << "ERROR:Attempted to add a visited node to master. This should never happen!" << std::endl;
+        std::cout << "ERROR: Attempted to add a visited node to master. This should never happen!" << std::endl;
         return;
     }
     n->visited = true;

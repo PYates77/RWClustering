@@ -24,3 +24,6 @@ int Cluster::max(void){
     }
     return currentMax;
 }
+Cluster::Cluster(int id){
+    this->id = id;
+}

@@ -13,8 +13,10 @@ class Node;
 
 struct Cluster {
     std::vector<Node *> members;
+    int id;
     int delay;
     int max(void);
+    Cluster(int);
     //TODO: need lists of input/output Nodes? Clusters?
 };
 
