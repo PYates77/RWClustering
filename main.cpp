@@ -82,6 +82,15 @@ int main(int argc, char **argv) {
         }
 
     }
+    //ADDED BY AKSHAY (DEBUG)
+    //Print out NXN Delay Matrix
+    std::cout << N << "x" << N << " DELAY MATRIX" << std::endl;
+    for (int i=0; i < N; ++i){
+        for (int j=0; j < N; ++j){
+            std::cout << delay_matrix[i*j] << "\t";
+        }
+        std::cout << std::endl;
+    }
 
     std::cout << "Delay Matrix Calculation Complete" << std::endl;
 
