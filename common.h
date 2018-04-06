@@ -2,8 +2,8 @@
 // Created by Akshay on 3/24/2018.
 //
 
-#ifndef RW_BLIFPARSER_H
-#define RW_BLIFPARSER_H
+#ifndef RW_COMMON_H
+#define RW_COMMON_H
 
 #include <stdio.h>
 #include <string.h>
@@ -33,7 +33,7 @@ std::vector<std::string> delimStr(std::string line,std::string delim){
 
 void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
     //preliminary run
-    std::cout << "Filename: " << filename << std::endl;
+    //std::cout << "Filename: " << filename << std::endl;
     std::ifstream blifFile;
     blifFile.open(filename);
     std::string line;
@@ -169,6 +169,26 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
 
 }
 
+std::vector<Node*> obtainPONodes(std::vector<Node>& rawNodeList){
+    std::vector<Node*> result;
+    for (auto in = rawNodeList.begin(); in < rawNodeList.end(); ++in){
+        if (in->isPO){
+            result.push_back(&(*in));
+        }
+    }
+    return result;
+}
 
-#endif //RW_BLIFPARSER_H
+std::vector<Node*> obtainPINodes(std::vector<Node>& rawNodeList){
+    std::vector<Node*> result;
+    for (auto in = rawNodeList.begin(); in < rawNodeList.end(); ++in){
+        if (in->isPI){
+            result.push_back(&(*in));
+        }
+    }
+    return result;
+}
+
+
+#endif //RW_COMMON_H
 

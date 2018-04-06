@@ -3,4 +3,4 @@ project(rw)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(rw main.cpp Node.cpp Node.h Cluster.cpp Cluster.h BLIFParser.h)
+add_executable(rw main.cpp Node.cpp Node.h Cluster.cpp Cluster.h common.h)

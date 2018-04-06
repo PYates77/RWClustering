@@ -7,7 +7,7 @@
 #include <set>
 #include "Node.h"
 #include "Cluster.h"
-#include "BLIFParser.h"
+#include "common.h"
 
 int max_cluster_size = 20; //default value = 20
 std::string BLIFFile = "../example_lecture.blif";
@@ -22,16 +22,8 @@ int main(int argc, char **argv) {
 
     //todo: interpret command-line arguments for input file and cluster size limit
     // REQUIREMENT: All arrays containing node objects MUST point to rawNodeList. No copies of Nodes may be made at any time.
-    std::vector<Node *> PIs;
-    std::vector<Node *> POs;
-    for(auto it = rawNodeList.begin(); it < rawNodeList.end(); ++it){
-        if(it->isPI){
-            PIs.push_back(&*it);
-        }
-        else if(it->isPO){
-            POs.push_back(&*it);
-        }
-    }
+    std::vector<Node *> PIs = obtainPINodes(rawNodeList);
+    std::vector<Node *> POs = obtainPONodes(rawNodeList);
 
     std::cout << "Populated PI and PO lists" << std::endl;
 
