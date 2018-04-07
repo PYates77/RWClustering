@@ -30,14 +30,16 @@ int main(int argc, char **argv) {
     int N = rawNodeList.size(); //the number of total nodes
 
     std::vector<Node *> master;
-    addToMaster(master, PIs.front()); //recursively add all of the nodes to the master list in topological order
+    for(auto out : POs){ //recursively add all nodes to master in topological order
+        addToMaster(master, out);
+    }
     //number the nodes in order for use in indexing the delay_matrix array
     int id = 0;
-    for(auto it = master.begin(); it != master.end(); ++it){
-        (*it)->id = id++;
+    for(auto node : master){
+        node->id = id++;
         //apply initial labeling (PI label = delay, non-PI label = 0)
-        if(!(*it)->prev.empty()) (*it)->label = 0;
-        else (*it)->label = (*it)->delay;
+        if(!node->prev.empty()) node->label = 0;
+        else node->label = node->delay;
     }
 
 
@@ -48,27 +50,51 @@ int main(int argc, char **argv) {
     int* delay_matrix = new int[N*N]; // Delay matrix is NxN square matrix.
     //todo: convert this into a sparse matrix
 
-    //TODO: double check this delay_matrix filling algorithm for correctness
     //delay_matrix[N*r+c] (aka delay_matrix[r][c]) represents max delay from node r to node c
     //the matrix entry = 0 if c precedes r in topological order
     std::vector<Node *>::const_iterator r; //the node corresponding to the current matrix row
     std::vector<Node *>::const_iterator c; // the node corresponding to the  current matrix column
-    std::vector<Node *>::const_iterator p; //the node's predecessors
     for(r = master.begin(); r != master.end();++r){ // iterate across every row
         //delay between a node and any previous node (and itself) is 0
-        for(c = master.begin(); c != std::next(r,1); ++c) delay_matrix[N * (*r)->id + (*c)->id] = 0; //c!=next(r,1) is because c<=r doesn't work
-        for(c = r; c != master.end(); ++c) {
+        for(c = master.begin(); c != r+1; ++c) delay_matrix[N * (*r)->id + (*c)->id] = 0;
+        for(c = r+1; c != master.end(); ++c) {
             //max_delay(r,c) = max( max_delay(r, c->prev) )
             int max=0;
             int prev_delay;
-            for(p = (*c)->prev.begin(); p != (*c)->prev.end(); ++p){
-                prev_delay = delay_matrix[N*(*r)->id+(*p)->id];
-                if(prev_delay > max) max = prev_delay;
+            for(Node* p : (*c)->prev){
+                prev_delay = delay_matrix[N*(*r)->id+p->id];
+                if(prev_delay > max) {
+                    max = prev_delay;
+                    //std::cout << "Found that " << (*c)->strID << "'s predecessor, " << (*p)->strID << ", has delay " << prev_delay << " to " << (*r)->strID << std::endl; //debug
+                }
             }
-            delay_matrix[N*(*r)->id+(*c)->id] = (*c)->delay + max;
+            //if no predecessors of c have a delay to r, then either r is a direct predecessor, or there is no link
+            if(max == 0) {
+                delay_matrix[N * (*r)->id + (*c)->id] = 0;
+                for (Node *p : (*c)->prev) {
+                    if (p->id == (*r)->id) {
+                        delay_matrix[N * (*r)->id + (*c)->id] = (*c)->delay;
+                    }
+                }
+            }
+            else{
+                delay_matrix[N * (*r)->id + (*c)->id] = (*c)->delay + max;
+            }
+            //std::cout << "Delay from " << (*r)->strID << " to " << (*c)->strID << " is " << delay_matrix[N*(*r)->id+(*c)->id]<< std::endl; //debug
         }
 
     }
+    // DEBUG
+    /*
+    std::cout << "DELAY MATRIX:" << std::endl;
+    for(int i = 0; i < N; ++i){
+        for(int j=0; j < N; ++j){
+            std::cout << delay_matrix[N*i+j];
+        }
+        std::cout << std::endl;
+    }
+     */
+
 
     std::cout << "Delay Matrix Calculation Complete" << std::endl;
 
@@ -83,17 +109,16 @@ int main(int argc, char **argv) {
         // let l2 = max(label_v+delay) of any node remaining in S
         // label(v) = max(l1,l2)
 
-    //todo: QUESTION. Do PI's get their own cluster? Does the vertex v need to be inserted into it's cluster?
     // right now this algorithm is answering these questions with yes and yes
 
     std::vector<Cluster> clusters;
-    for(auto v = master.begin(); v != master.end(); ++v) {
+    for(auto v : master) {
 
         std::set<Node *, compare_lv> Gv;
 
         //skip PIs (label(PI) = delay(pi) already implemented)
-        if (!(*v)->prev.empty()) {
-            (*v)->predecessors_r(Gv); //recursively insert all predecessors (once and only once) into Gv
+        if (!v->prev.empty()) {
+            v->predecessors_r(Gv); //recursively insert all predecessors (once and only once) into Gv
         }
 
         // copy Gv to S, a vector. Useful because we cannot directly modify set members.
@@ -101,12 +126,13 @@ int main(int argc, char **argv) {
         std::copy(Gv.begin(), Gv.end(), std::back_inserter(S));
 
         // calculate label_v(x)
-        for(auto x = S.begin(); x != S.end(); ++x){
-            (*x)->label_v = (*x)->label + delay_matrix[N*(*x)->id+(*v)->id];
+        for(auto x : S){
+            x->label_v = x->label + delay_matrix[N*x->id+v->id];
         }
 
-        Cluster cl((*v)->id);
-        cl.members.push_back(*v);
+
+        Cluster cl(v->id);
+        cl.members.push_back(v);
 
         // pop first element from S and add to c until max cluster size reached or S is empty
         for(int i=0; i<max_cluster_size; ++i) {
@@ -115,11 +141,13 @@ int main(int argc, char **argv) {
             S.erase(S.begin());
         }
 
-        (*v)->label = cl.max(); //Cluster::max returns label(v) as the max of all label_v+delay (of non PIs) and label_v (of PIs)
+        (v)->label = cl.max(); //Cluster::max returns label(v) as the max of all label_v+delay (of non PIs) and label_v (of PIs)
         clusters.push_back(cl);
     }
 
     std::cout << "Calculation of Labels and Clusters Complete" << std::endl;
+
+    //DEBUG
 
     for(auto cluster : clusters){
         std::cout << "\nCluster " << cluster.id << " has: " << std::endl;
@@ -129,27 +157,22 @@ int main(int argc, char **argv) {
     }
 
 
+
     //todo: output to file and possibly GUI
 
     delete[] delay_matrix;
 
-
     return 0;
 }
 
+//adds a node to master in topological order by first ensuring that all predecessors have been added to master
 void addToMaster(std::vector<Node *> &m, Node *n){
-    if(n->visited) {
-        std::cout << "ERROR: Attempted to add a visited node to master. This should never happen!" << std::endl;
-        return;
+    for(auto node : n->prev){
+        if (!node->visited) addToMaster(m, node);
     }
     n->visited = true;
-    std::vector<Node *>::iterator it;
-    for(it = n->prev.begin(); it != n->prev.end(); ++it){
-        if(!(*it)->visited) addToMaster(m, *it); //place ALL predecessors of n onto the list first
-    }
-    m.push_back(n); //push n onto the list
-    for(it = n->next.begin(); it != n->next.end(); ++it){
-        if(!(*it)->visited) addToMaster(m, *it); // place all unvisited successors of n onto the list
-    }
+    m.push_back(n);
+    //std::cout << "Adding " << n->strID  << " to master." << std::endl; //debug
 }
+
 

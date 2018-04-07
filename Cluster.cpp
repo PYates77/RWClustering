@@ -10,13 +10,13 @@
 // label(v) = max(l1,l2)
 int Cluster::max(void){
     int currentMax = 0;
-    for(std::vector<Node *>::iterator it=members.begin(); it != members.end(); ++it){
+    for(auto node: members){
         int m = 0;
-        if(!(*it)->prev.empty()){ // if *it is not a PI
-            m = (*it)->label_v + (*it)->delay;
+        if(!node->prev.empty()){ // if *it is not a PI
+            m = node->label_v + node->delay;
         }
         else{ //if *it is a PI
-            m = (*it)->label_v;
+            m = node->label_v;
         }
         if (m > currentMax){
             currentMax = m;

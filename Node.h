@@ -48,9 +48,12 @@ public:
     void predecessors_r(std::set<Node *, compare_lv>&);
 };
 
-// for ordering nodes in S set
+// for ordering nodes in S set, nodes are ordered first by label, then by ID
 struct compare_lv{
     bool operator() (const Node* lhs, const Node* rhs) const {
+        if(lhs->label_v == rhs->label_v){
+            return lhs->id > rhs->id;
+        }
         return lhs->label_v > rhs->label_v; //sorting should be in DECREASING order
         // todo: ensure ordering is correct
     }
