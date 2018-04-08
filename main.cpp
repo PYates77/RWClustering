@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <set>
+#include <unistd.h>
 #include "Node.h"
 #include "Cluster.h"
 #include "common.h"
@@ -15,7 +16,21 @@ std::string BLIFFile = "../example_lecture.blif";
 void addToMaster(std::vector<Node *> &m, Node *n);
 
 int main(int argc, char **argv) {
+
+    //parse arguments
+    int flag;
+    while((flag = getopt(argc, argv, "s:")) != -1){
+        switch(flag){
+            case 's':
+                max_cluster_size = std::atoi(optarg);
+                break;
+        }
+    }
+
+
+
     std::cout << "Hello, RWClustering World!" << std::endl;
+    std::cout << "Max Cluster Size = " << max_cluster_size << std::endl;
     std::vector<Node> rawNodeList;
     parseBLIF(BLIFFile,rawNodeList);
     std::cout << "Parsing Complete" << std::endl;
