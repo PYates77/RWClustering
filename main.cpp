@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
         cl.members.push_back(v);
 
         // pop first element from S and add to c until max cluster size reached or S is empty
-        for(int i=0; i<max_cluster_size; ++i) {
+        for(int i=1; i<max_cluster_size; ++i) { //i starts at 1 to include initial element already in cluster
             if(S.size() == 0) break;
             cl.members.push_back(*S.begin());
             S.erase(S.begin());
