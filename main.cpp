@@ -10,14 +10,23 @@
 #include "Cluster.h"
 #include "common.h"
 
+//TODO: USER PARAMETERS (SHOULD BE COMMAND LINE DRIVEN)
 int MAX_CLUSTER_SIZE = 4; //default value = 20
 int INTER_CLUSTER_DELAY = 4;
+bool UNIX_RUN = false;
 
-std::string BLIFFile = "../example_lecture.blif";
+std::string BLIFFile = "example_lecture.blif";
 
 void addToMaster(std::vector<Node *> &m, Node *n);
 
 int main(int argc, char **argv) {
+
+    if (UNIX_RUN){
+        std::string BLIFFile = "example_lecture.blif";
+    }
+    else {
+        std::string BLIFFile = "../example_lecture.blif";
+    }
 
     //parse arguments
     int flag;
