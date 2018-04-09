@@ -15,7 +15,7 @@ struct Cluster {
     std::vector<Node *> members;
     int id;
     int delay;
-    int max(void);
+    int calcL1Value();
     Cluster(int);
     //TODO: need lists of input/output Nodes? Clusters?
 };

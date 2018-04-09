@@ -10,8 +10,10 @@
 #include "Cluster.h"
 #include "common.h"
 
-int max_cluster_size = 20; //default value = 20
-std::string BLIFFile = "../example_lecture.blif";
+int MAX_CLUSTER_SIZE = 4; //default value = 20
+int INTER_CLUSTER_DELAY = 4;
+
+std::string BLIFFile = "example_lecture.blif";
 
 void addToMaster(std::vector<Node *> &m, Node *n);
 
@@ -22,18 +24,27 @@ int main(int argc, char **argv) {
     while((flag = getopt(argc, argv, "s:")) != -1){
         switch(flag){
             case 's':
-                max_cluster_size = std::atoi(optarg);
+                MAX_CLUSTER_SIZE = std::atoi(optarg);
                 break;
         }
     }
 
 
-
-    std::cout << "Hello, RWClustering World!" << std::endl;
-    std::cout << "Max Cluster Size = " << max_cluster_size << std::endl;
+    std::cout << "Hello, RWClustering" << " World!" << std::endl;
+    std::cout << "Max Cluster Size = " << MAX_CLUSTER_SIZE << std::endl;
     std::vector<Node> rawNodeList;
+
     parseBLIF(BLIFFile,rawNodeList);
     std::cout << "Parsing Complete" << std::endl;
+
+    //DEBUG
+    std::cout << "NODE ORDER: [";
+    int idN = 0;
+    for (std::vector<Node>::iterator iN = rawNodeList.begin(); iN < rawNodeList.end(); ++iN){
+        std::cout << iN->strID << "(" << idN << "),";
+        idN += 1;
+    }
+    std::cout << "]" << std::endl;
 
     //todo: interpret command-line arguments for input file and cluster size limit
     // REQUIREMENT: All arrays containing node objects MUST point to rawNodeList. No copies of Nodes may be made at any time.
@@ -48,6 +59,15 @@ int main(int argc, char **argv) {
     for(auto out : POs){ //recursively add all nodes to master in topological order
         addToMaster(master, out);
     }
+
+    //DEBUG (SHOULD BE DELETED); JUST FOR CHECKING WITH MY HANDWRITTEN SOLUTION
+    master.clear();
+    int indices[12] = {0,1,2,5,6,7,8,9,10,11,3,4};
+    for (int i=0; i < 12; ++i){
+        master.push_back(&rawNodeList.at(indices[i]));
+    }
+
+
     //number the nodes in order for use in indexing the delay_matrix array
     int id = 0;
     for(auto node : master){
@@ -56,6 +76,13 @@ int main(int argc, char **argv) {
         if(!node->prev.empty()) node->label = 0;
         else node->label = node->delay;
     }
+
+    //DEBUG
+    std::cout << "TOPOLOGICAL ORDER: [";
+    for (std::vector<Node*>::iterator iM = master.begin(); iM < master.end(); ++iM){
+        std::cout << (*iM)->strID << ",";
+    }
+    std::cout << "]" << std::endl;
 
 
     //////     COMPUTE DELAY MATRIX //////
@@ -100,15 +127,20 @@ int main(int argc, char **argv) {
 
     }
     // DEBUG
-    /*
+
     std::cout << "DELAY MATRIX:" << std::endl;
+    for (auto m : master){
+        std::cout << "\t" << m->strID;
+    }
+    std::cout << std::endl;
     for(int i = 0; i < N; ++i){
+        std::cout << master.at(i)->strID;
         for(int j=0; j < N; ++j){
-            std::cout << delay_matrix[N*i+j];
+            std::cout << "\t" << delay_matrix[N*i+j];
         }
         std::cout << std::endl;
     }
-     */
+
 
 
     std::cout << "Delay Matrix Calculation Complete" << std::endl;
@@ -136,6 +168,13 @@ int main(int argc, char **argv) {
             v->predecessors_r(Gv); //recursively insert all predecessors (once and only once) into Gv
         }
 
+        //DEBUG
+        std::cout << v->strID << "'s Gv Set (BEFORE ORDERING): [";
+        for (auto n : Gv){
+            std::cout << n->strID << "(" << n->label_v << "),";
+        }
+        std::cout << "]" << std::endl;
+
         // copy Gv to S, a vector. Useful because we cannot directly modify set members.
         std::vector<Node *> S;
         std::copy(Gv.begin(), Gv.end(), std::back_inserter(S));
@@ -145,18 +184,58 @@ int main(int argc, char **argv) {
             x->label_v = x->label + delay_matrix[N*x->id+v->id];
         }
 
+        //DEBUG
+        std::cout << v->strID << "'s Gv Set (AFTER ORDERING): [";
+        for (auto n : Gv){
+            std::cout << n->strID << "(" << n->label_v << "),";
+        }
+        std::cout << "]" << std::endl;
+
+        //DEBUG
+        std::cout << v->strID << "'s S Set: [";
+        for (auto n : S){
+            std::cout << n->strID << "(" << n->label_v << "),";
+        }
+        std::cout << "]" << std::endl;
+
 
         Cluster cl(v->id);
         cl.members.push_back(v);
 
         // pop first element from S and add to c until max cluster size reached or S is empty
-        for(int i=1; i<max_cluster_size; ++i) { //i starts at 1 to include initial element already in cluster
+        for(int i=1; i<MAX_CLUSTER_SIZE; ++i) { //i starts at 1 to include initial element already in cluster
             if(S.size() == 0) break;
             cl.members.push_back(*S.begin());
             S.erase(S.begin());
         }
 
-        (v)->label = cl.max(); //Cluster::max returns label(v) as the max of all label_v+delay (of non PIs) and label_v (of PIs)
+        //DEBUG
+        std::cout << v->strID << "'s CLUSTER: [";
+        for (auto n : cl.members){
+            std::cout << n->strID << "(" << n->label_v << "),";
+        }
+        std::cout << "]" << std::endl;
+
+        int L2 = 0;
+        if (S.size() != 0){
+            //DEBUG
+            std::cout << v->strID << " has a non-zero S Set remaining: [";
+            for (auto n : S){
+                std::cout << n->strID << "(" << n->label_v << "),";
+            }
+            std::cout << "]" << std::endl;
+            //END DEBUG
+
+
+            L2 = (*S.begin())->label_v + INTER_CLUSTER_DELAY;
+        }
+        int L1 = cl.calcL1Value();
+        //DEBUG
+        std::cout << v->strID << "'s L1 value: " << L1 << std::endl;
+        std::cout << v->strID << "'s L2 value: " << L2 << std::endl;
+
+
+        v->label = (L1 > L2) ? L1 : L2;
         clusters.push_back(cl);
     }
 
@@ -164,15 +243,19 @@ int main(int argc, char **argv) {
 
     //DEBUG
 
+    for (auto m : master){
+        std::cout << "LABEL FOR NODE " << m->strID << ": " << m->label << std::endl;
+    }
+
     for(auto cluster : clusters){
-        std::cout << "\nCluster " << cluster.id << " has: " << std::endl;
+        std::cout << "\nCluster " << cluster.id << "(" << master.at(cluster.id)->strID << ") has: " << std::endl;
         for(auto member : cluster.members){
             std::cout << member->id << " (" << member->strID << ")" << std::endl;
         }
     }
 
 
-
+    std::cout << "PROGRAM COMPLETE" << std::endl;
     //todo: output to file and possibly GUI
 
     delete[] delay_matrix;

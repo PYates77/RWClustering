@@ -10,14 +10,8 @@
 #include <set>
 #include <string>
 
-struct compare_lv;
 
-enum nType {  //TODO: RIP OUT LATER (DEBUG)
-    PI,
-    PO,
-    GATE,
-    INVALID
-};
+struct compare_lv;
 
 class Node {
 private:
@@ -29,7 +23,7 @@ public:
     int id;
     bool visited;
     int label = 0;
-    int label_v;
+    int label_v = 0;
 
     bool isPI = false;
     bool isPO = false;
