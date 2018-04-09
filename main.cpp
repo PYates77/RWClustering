@@ -13,7 +13,7 @@
 int MAX_CLUSTER_SIZE = 4; //default value = 20
 int INTER_CLUSTER_DELAY = 4;
 
-std::string BLIFFile = "example_lecture.blif";
+std::string BLIFFile = "../example_lecture.blif";
 
 void addToMaster(std::vector<Node *> &m, Node *n);
 
@@ -59,6 +59,7 @@ int main(int argc, char **argv) {
     for(auto out : POs){ //recursively add all nodes to master in topological order
         addToMaster(master, out);
     }
+
 
     //DEBUG (SHOULD BE DELETED); JUST FOR CHECKING WITH MY HANDWRITTEN SOLUTION
     master.clear();
@@ -156,16 +157,16 @@ int main(int argc, char **argv) {
         // let l2 = max(label_v+delay) of any node remaining in S
         // label(v) = max(l1,l2)
 
-    // right now this algorithm is answering these questions with yes and yes
 
+    //todo: consider optimizing this code by changing how and when the ordered set container is used
     std::vector<Cluster> clusters;
     for(auto v : master) {
 
-        std::set<Node *, compare_lv> Gv;
+        std::set<Node *,compare_lv> Gv;
 
         //skip PIs (label(PI) = delay(pi) already implemented)
         if (!v->prev.empty()) {
-            v->predecessors_r(Gv); //recursively insert all predecessors (once and only once) into Gv
+            v->predecessors_r(Gv);
         }
 
         //DEBUG
@@ -175,13 +176,16 @@ int main(int argc, char **argv) {
         }
         std::cout << "]" << std::endl;
 
-        // copy Gv to S, a vector. Useful because we cannot directly modify set members.
-        std::vector<Node *> S;
-        std::copy(Gv.begin(), Gv.end(), std::back_inserter(S));
 
         // calculate label_v(x)
-        for(auto x : S){
+        for(auto x : Gv){
             x->label_v = x->label + delay_matrix[N*x->id+v->id];
+        }
+
+        // copy Gv to S, which forces ordering to occur
+        std::set<Node *, compare_lv> S;
+        for( auto n : Gv){
+            S.insert(n); //insert in correct order
         }
 
         //DEBUG
