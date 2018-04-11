@@ -284,6 +284,10 @@ int main(int argc, char **argv) {
         for(auto member : cluster.members){
             std::cout << member->id << " (" << member->strID << ")" << std::endl;
         }
+        std::cout << "\nCluster " << cluster.id << "(" << master.at(cluster.id)->strID << ") has inputs: " << std::endl;
+        for(auto in : cluster.inputSet){
+            std::cout << in->id << " (" << in->strID << ")" << std::endl;
+        }
     }
 
 
