@@ -2,13 +2,14 @@
 // Created by Paul on 2/13/2018.
 // TODO: Create a license or whatever up here so that lovely students after us can reference our nice code
 //
-#include <iostream>
-#include <fstream>
+
+
 #include <set>
 #include <unistd.h>
 #include "Node.h"
 #include "Cluster.h"
 #include "common.h"
+
 
 //TODO: USER PARAMETERS (SHOULD BE COMMAND LINE DRIVEN)
 int MAX_CLUSTER_SIZE = 4; //default value = 20
@@ -249,6 +250,7 @@ int main(int argc, char **argv) {
 
 
         v->label = (L1 > L2) ? L1 : L2;
+        generateInputSet(cl);
         clusters.push_back(cl);
     }
 

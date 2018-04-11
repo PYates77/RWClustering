@@ -10,8 +10,6 @@
 #include <set>
 #include <string>
 
-
-
 struct compare_lv;
 
 class Node {
@@ -53,5 +51,7 @@ struct compare_lv{
         // todo: ensure ordering is correct
     }
 };
+
+
 
 #endif //RW_NODE_H

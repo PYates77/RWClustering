@@ -12,3 +12,4 @@ void Node::predecessors_r(std::set<Node *, compare_lv>& V){
        node->predecessors_r(V);
    }
 }
+

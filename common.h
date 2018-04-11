@@ -6,8 +6,8 @@
 #define RW_COMMON_H
 
 #include <vector>
-#include <string.h>
-#include <string>
+#include <fstream>
+#include <iostream>
 
 
 int PRIMARY_INPUT_DELAY = 0;
@@ -22,7 +22,6 @@ Node* retrieveNodeByStr(std::string nodeID, std::vector<Node> &nodeList){
     }
     return nullptr;
 }
-
 Node* retrieveNodeByStr_ptr(std::string nodeID, std::vector<Node*> &nodeList){
     //DESCRIPTION: Helper function to retrieve a node's pointer
     for (std::vector<Node*>::iterator iN = nodeList.begin(); iN < nodeList.end(); ++iN){
@@ -33,7 +32,6 @@ Node* retrieveNodeByStr_ptr(std::string nodeID, std::vector<Node*> &nodeList){
     }
     return nullptr;
 }
-
 
 std::string ripBadChars(std::string str){
     std::string result = "";
@@ -210,6 +208,26 @@ std::vector<Node*> obtainPINodes(std::vector<Node>& rawNodeList){
         }
     }
     return result;
+}
+
+void generateInputSet(Cluster& c){
+
+    //Description: generates the input() set for a cluster
+    std::copy(c.members.begin(),c.members.end(),std::back_inserter(c.inputSet));
+
+    for(auto cNode : c.members){
+        for (auto pNode : cNode->prev){
+            //check if node isn't already part of input set
+            Node *nPtr = retrieveNodeByStr_ptr(pNode->strID,c.inputSet);
+            if (nPtr == nullptr){
+                c.inputSet.push_back(pNode);
+            }
+        }
+    }
+
+    //delete the cluster elements from the inputSet
+    c.inputSet.erase(c.inputSet.begin(), c.inputSet.begin() + c.members.size());
+
 }
 
 

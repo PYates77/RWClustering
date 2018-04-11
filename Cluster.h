@@ -18,9 +18,7 @@ struct Cluster {
     int calcL1Value();
     Cluster(int);
     std::vector<Node *> inputSet;
-    void generateInputSet();
     //TODO: need lists of input/output Nodes? Clusters?
 };
-
 
 #endif //RW_CLUSTER_H
