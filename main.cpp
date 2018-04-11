@@ -254,6 +254,23 @@ int main(int argc, char **argv) {
 
     std::cout << "Calculation of Labels and Clusters Complete" << std::endl;
 
+    //CLUSTERING PHASE
+    std::vector<Cluster *> finalClusterList;
+    std::vector<Node *> L;
+
+    std::copy(POs.begin(),POs.end(),std::back_inserter(L)); //Generate L as the set of all POs in the circuit
+    while (!L.empty()){
+        //retrieve first element of L and pop from L
+        Node *lNode = *L.begin();
+        L.erase(L.begin());
+
+        //add cluster to finalClusterList
+        Cluster* c = &(clusters.at(lNode->id));
+        finalClusterList.push_back(c);
+
+
+    }
+
     //DEBUG
 
     for (auto m : master){

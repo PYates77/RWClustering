@@ -22,3 +22,23 @@ int Cluster::calcL1Value(){
 Cluster::Cluster(int id){
     this->id = id;
 }
+
+void Cluster::generateInputSet(){
+    /*
+    //Description: generates the input() set for a cluster
+    std::copy(this->members.begin(),this->members.end(),std::back_inserter(this->inputSet));
+
+    for(auto cNode : this->members){
+        for (auto pNode : cNode->prev){
+            //check if node isn't already part of input set
+            Node *nPtr = retrieveNodeByStr_ptr(pNode->strID,this->inputSet);
+            if (nPtr == nullptr){
+                this->inputSet.push_back(pNode);
+            }
+        }
+    }
+
+    //delete the cluster elements from the inputSet
+    this->inputSet.erase(this->members.begin(),this->members.begin() + this->members.size());
+    */
+ }

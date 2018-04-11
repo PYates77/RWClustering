@@ -12,7 +12,7 @@
 
 int PRIMARY_INPUT_DELAY = 0;
 
-Node* findNodeByStr(std::string nodeID, std::vector<Node>& nodeList){
+Node* retrieveNodeByStr(std::string nodeID, std::vector<Node> &nodeList){
     //DESCRIPTION: Helper function to retrieve a node's pointer
     for (std::vector<Node>::iterator iN = nodeList.begin(); iN < nodeList.end(); ++iN){
         if (iN->strID == nodeID){
@@ -22,6 +22,18 @@ Node* findNodeByStr(std::string nodeID, std::vector<Node>& nodeList){
     }
     return nullptr;
 }
+
+Node* retrieveNodeByStr_ptr(std::string nodeID, std::vector<Node*> &nodeList){
+    //DESCRIPTION: Helper function to retrieve a node's pointer
+    for (std::vector<Node*>::iterator iN = nodeList.begin(); iN < nodeList.end(); ++iN){
+        if ((*iN)->strID == nodeID){
+            //Match found!
+            return *iN;
+        }
+    }
+    return nullptr;
+}
+
 
 std::string ripBadChars(std::string str){
     std::string result = "";
@@ -130,7 +142,7 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
             }
             if (signals.at(0) == gateStr){
                 modeStr = "";
-                Node *gateNode = findNodeByStr(signals.at(signals.size()-1),rawNodeList);
+                Node *gateNode = retrieveNodeByStr(signals.at(signals.size() - 1), rawNodeList);
                 if (gateNode != nullptr){
                     //this node has already been initiliazed as a primary output
                     gateNode->procStr = line;
@@ -158,7 +170,7 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
             //std::cout << iN->strID << std::endl;
             std::vector<std::string> nStrList = delimStr(iN->procStr," ");
             for (std::vector<std::string>::iterator is = nStrList.begin()+1; is < nStrList.end()-1; ++is){
-                Node *driver = findNodeByStr(*is,rawNodeList);
+                Node *driver = retrieveNodeByStr(*is, rawNodeList);
                 if (driver != nullptr){
                     iN->prev.push_back(driver);
                     driver->next.push_back(&(*iN));

@@ -17,6 +17,8 @@ struct Cluster {
     int delay;
     int calcL1Value();
     Cluster(int);
+    std::vector<Node *> inputSet;
+    void generateInputSet();
     //TODO: need lists of input/output Nodes? Clusters?
 };
 
