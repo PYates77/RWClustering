@@ -10,6 +10,7 @@
 #include "Cluster.h"
 #include "common.h"
 #include <chrono>
+#include <algorithm>
 
 namespace sc = std::chrono;
 
@@ -21,9 +22,14 @@ int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
 bool UNIX_RUN = false;
 
-std::string BLIFFile = "example_lecture.blif";
+std::string BLIFFile = "../example_lecture.blif";
 
-void addToMaster(std::vector<Node *> &m, Node *n);
+void addPredecessors(std::vector<Node *> &m, Node *n);
+
+
+
+
+
 
 int main(int argc, char **argv) {
 
@@ -81,7 +87,7 @@ int main(int argc, char **argv) {
     std::vector<Node *> master;
     auto topoStart = sc::high_resolution_clock::now();
     for(auto out : POs){ //recursively add all nodes to master in topological order
-        addToMaster(master, out);
+        addPredecessors(master, out);
     }
     auto topoEnd = sc::high_resolution_clock::now();
 
@@ -198,49 +204,27 @@ int main(int argc, char **argv) {
     auto labelClusterStart = sc::high_resolution_clock::now();
     for(auto v : master) {
 
-        std::set<Node *,compare_lv> Gv;
+        std::vector<Node *> S;
+
+        //prepare to add all predecessors of v to Gv by first resetting the visited flag
+        for (auto n : master){
+            n->visited = false;
+        }
 
         //skip PIs (label(PI) = delay(pi) already implemented)
         if (!v->prev.empty()) {
-            v->predecessors_r(Gv);
+            for(auto n : v->prev){
+                addPredecessors(S, n);
+            }
         }
-
-        //DEBUG
-        /*
-        std::cout << v->strID << "'s Gv Set (BEFORE ORDERING): [";
-        for (auto n : Gv){
-            std::cout << n->strID << "(" << n->label_v << "),";
-        }
-        std::cout << "]" << std::endl;
-        */
 
         // calculate label_v(x)
-        for(auto x : Gv){
+        for(auto x : S){
             x->label_v = x->label + delay_matrix[N*x->id+v->id];
         }
 
         // copy Gv to S, which forces ordering to occur
-        std::set<Node *, compare_lv> S;
-        for( auto n : Gv){
-            S.insert(n); //insert in correct order
-        }
-
-        //DEBUG
-        /*
-        std::cout << v->strID << "'s Gv Set (AFTER ORDERING): [";
-        for (auto n : Gv){
-            std::cout << n->strID << "(" << n->label_v << "),";
-        }
-        std::cout << "]" << std::endl;
-
-        //DEBUG
-        std::cout << v->strID << "'s S Set: [";
-        for (auto n : S){
-            std::cout << n->strID << "(" << n->label_v << "),";
-        }
-        std::cout << "]" << std::endl;
-        */
-
+        std::sort(S.begin(),S.end(),compare_lv);
 
         Cluster cl(v->id);
         cl.members.push_back(v);
@@ -252,26 +236,8 @@ int main(int argc, char **argv) {
             S.erase(S.begin());
         }
 
-        //DEBUG
-        /*
-        std::cout << v->strID << "'s CLUSTER: [";
-        for (auto n : cl.members){
-            std::cout << n->strID << "(" << n->label_v << "),";
-        }
-        std::cout << "]" << std::endl;
-        */
-
         int L2 = 0;
         if (S.size() != 0){
-            //DEBUG
-            /*
-            std::cout << v->strID << " has a non-zero S Set remaining: [";
-            for (auto n : S){
-                std::cout << n->strID << "(" << n->label_v << "),";
-            }
-            std::cout << "]" << std::endl;
-            //END DEBUG
-            */
 
             L2 = (*S.begin())->label_v + INTER_CLUSTER_DELAY;
         }
@@ -380,9 +346,9 @@ int main(int argc, char **argv) {
 }
 
 //adds a node to master in topological order by first ensuring that all predecessors have been added to master
-void addToMaster(std::vector<Node *> &m, Node *n){
+void addPredecessors(std::vector<Node *> &m, Node *n){
     for(auto node : n->prev){
-        if (!node->visited) addToMaster(m, node);
+        if (!node->visited) addPredecessors(m, node);
     }
     n->visited = true;
     m.push_back(n);

@@ -4,12 +4,12 @@
 
 #include "Node.h"
 
-
-// recursively inserts all predecessors into set
-void Node::predecessors_r(std::set<Node *, compare_lv>& V){
-   for(auto node : prev ){
-       V.insert(node); // will only insert if not already in V
-       node->predecessors_r(V);
-   }
+// for ordering nodes in S set, nodes are ordered first by label, then by ID
+bool compare_lv (const Node* lhs, const Node* rhs) {
+    if(lhs->label_v == rhs->label_v){
+        return lhs->id > rhs->id;
+    }
+    return lhs->label_v > rhs->label_v; //sorting should be in DECREASING order
 }
+
 
