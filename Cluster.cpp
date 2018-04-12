@@ -23,3 +23,11 @@ int Cluster::calcL1Value(){
 Cluster::Cluster(int id){
     this->id = id;
 }
+bool Cluster::isClusterInList(int cID,std::vector<Cluster*>& cList){
+    for (auto c: cList){
+        if (c->id == cID){
+            return true;
+        }
+    }
+    return false;
+}

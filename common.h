@@ -8,9 +8,9 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <chrono>
 
 
-int PRIMARY_INPUT_DELAY = 0;
 
 Node* retrieveNodeByStr(std::string nodeID, std::vector<Node> &nodeList){
     //DESCRIPTION: Helper function to retrieve a node's pointer
@@ -61,7 +61,7 @@ std::vector<std::string> delimStr(std::string line,std::string delim){
     return result;
 }
 
-void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
+void parseBLIF(std::string filename, int& piDelay, int& poDelay, int& nodeDelay, std::vector<Node>& rawNodeList){
     //preliminary run
     //std::cout << "Filename: " << filename << std::endl;
     std::ifstream blifFile;
@@ -88,7 +88,7 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
                         modeStr = inputStr;
                         continue;
                     }
-                    Node n(PRIMARY_INPUT_DELAY);
+                    Node n(piDelay);
                     n.isPI = true;
                     n.isPO = false;
                     n.strID = *iS;
@@ -105,7 +105,7 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
                         modeStr = outputStr;
                         continue;
                     }
-                    Node n;
+                    Node n(poDelay);
                     n.isPI = false;
                     n.isPO = true;
                     n.strID = *iS;
@@ -120,7 +120,7 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
                 while (argCount < 2){
                     if (!argCount) {
                         //Input of Latch becomes PO
-                        Node n;
+                        Node n(poDelay);
                         n.strID = signals.at(1) + "_OL";
                         n.isPO = true;
                         n.isPI = false;
@@ -128,7 +128,7 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
                     }
                     else {
                         //Output of Latch becomes PI
-                        Node n(PRIMARY_INPUT_DELAY);
+                        Node n(piDelay);
                         n.strID = signals.at(2) + "_IL";
                         n.isPI = true;
                         n.isPO = false;
@@ -147,7 +147,7 @@ void parseBLIF(std::string filename, std::vector<Node>& rawNodeList){
                 }
                 else {
                     //this node has not already been initialized
-                    Node n;
+                    Node n(nodeDelay);
                     n.strID = signals.at(signals.size()-1);
                     n.procStr = line;
                     n.isPI = false;
@@ -228,6 +228,29 @@ void generateInputSet(Cluster& c){
     //delete the cluster elements from the inputSet
     c.inputSet.erase(c.inputSet.begin(), c.inputSet.begin() + c.members.size());
 
+}
+
+std::pair<long long int,std::string> measureExecTime(std::chrono::time_point<std::chrono::high_resolution_clock>& start,std::chrono::time_point<std::chrono::high_resolution_clock>& end){
+    std::pair<long long int,std::string> result;
+    result.first = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    result.second = "us";
+    if (result.first >= 1000){
+        result.first = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        result.second = "ms";
+        if (result.first >= 1000){
+            result.first = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
+            result.second = "s";
+            if (result.first >= 60){
+                result.first = std::chrono::duration_cast<std::chrono::minutes>(end - start).count();
+                result.second = "min";
+                if (result.first >= 60){
+                    result.first = std::chrono::duration_cast<std::chrono::hours>(end - start).count();
+                    result.second = "hrs";
+                }
+            }
+        }
+    }
+    return result;
 }
 
 
