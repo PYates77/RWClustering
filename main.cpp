@@ -44,7 +44,6 @@ int main(int argc, char **argv) {
         }
     }
 
-
     std::cout << "RWClustering Application" << "\nAuthors: Akshay Nagendra <akshaynag@gatech.edu>, Paul Yates <pyates6@gatech.edu>" << std::endl;
     std::cout << "------------------------------------" << std::endl;
     std::cout << "Max Cluster Size = " << MAX_CLUSTER_SIZE << std::endl;

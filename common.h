@@ -180,11 +180,13 @@ void parseBLIF(std::string filename, int& piDelay, int& poDelay, int& nodeDelay,
 
             }
         }
-        else if (iN->strID.find("_IL") != std::string::npos){
-            //TODO (AKSHAY): the node is a PI latch which we need to setup correctly
-        }
-        else if (iN->strID.find("_OL") != std::string::npos){
-            //TODO (AKSHAY): the node is a PO latch which we need to setup correctly
+        else if (iN->strID.length() > 3){
+            if (iN->strID.substr(iN->strID.length()-3,3) == "_IL") {
+                //TODO (AKSHAY): the node is a PI latch which we need to setup correctly
+
+            } else if (iN->strID.substr(iN->strID.length()-3,3) == "_OL") {
+                //TODO (AKSHAY): the node is a PO latch which we need to setup correctly
+            }
         }
     }
 
