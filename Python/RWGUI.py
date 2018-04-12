@@ -23,7 +23,7 @@ CANVAS_DISPLAY_H = 850
 CANVAS_WIDTH = 650
 CANVAS_HEIGHT = 650
 WINDOW_WIDTH = 1800
-WINDOW_HEIGHT = 900
+WINDOW_HEIGHT = 920
 WINDOW_DIM = str(WINDOW_WIDTH) + "x" + str(WINDOW_HEIGHT)
 SCREEN_WIDTH = 2000
 SCREEN_HEIGHT = 2000
@@ -34,6 +34,9 @@ EBUFFER = 40
 Y_STEP = 2.5*CURSOR_SIZE
 DEGREE_FOR_CONFLICT = 9
 SCROLLBAR_WIDTH = 16
+NUM_CONSOLE_BUTTONS = 3
+CONSOLE_WIDTH = CANVAS_DISPLAY_W + SCROLLBAR_WIDTH
+CONSOLE_BUTTON_HEIGHT = WINDOW_HEIGHT - (CANVAS_DISPLAY_H + SCROLLBAR_WIDTH)
 LABEL_WIDTH = int(1.25*FONT_SIZE)
 NUM_COLUMNS_TABLE = 5
 COLUMN_HEADERS = ["NODE","NODE DELAY","PI?","LABEL","CLUSTER"]
@@ -230,8 +233,74 @@ def verifyPlacement(nList,eList):
                 #print "Angle Violation:\nEdge Angle: ", e.angle, "\nAngle to Violating Node: ", headAngle
                 return True
     return False
+
+def displayTable(frameTable,nList):
+    #Populate table of information
+    for i in range(len(nList)+1): #Rows
+        for j in range(NUM_COLUMNS_TABLE): #Columns
+            b = tkinter.Label(frameTable, relief=tkinter.RAISED, width=LABEL_WIDTH)
+            msg = ""
+            fontStyle = ""
+            if not i:
+                fontStyle = "bold"
+                msg = COLUMN_HEADERS.pop(0)
+            else:
+                if j == 0:
+                    msg = nList[i-1].nodeID
+                if j == 1:
+                    msg = DELAY
+                if j == 2:
+                    if not nList[i-1].prevn:
+                        msg = "Y"
+                    else:
+                        msg = "N"
+                if j == 3:
+                    msg = nList[i-1].label
+                if j == 4:
+                    msg = "{"
+                    for c in nList[i-1].cluster:
+                        msg += c + ","
+                    msg = msg[0:len(msg)-1] + "}"
+                fontStyle = "normal"
+            b.config(font=("Times New Roman", FONT_SIZE, fontStyle))
+            b.config(text=msg)
+            b.grid(row=i, column=j)
     
-    
+def DAGPLACER(srcNList,nList):
+    count = 0
+    needToPlace = True
+    while (needToPlace):
+        #do placement
+        #print "Attempting Placement Iteration ", count
+        nList = nodePlacement(srcNList,nList)
+        edgeList = []
+        for srcNode in nList:
+            for n in srcNode.nextn:
+                nextNode = retrieveNodeByID(nList,n)
+                e = edgeGenerator(srcNode,nextNode)
+                edgeList.append(e)
+        #verify placement
+        needToPlace = verifyPlacement(nList,edgeList)
+        #if (needToPlace):
+            #print "Placement Iteration ", count, " Failed"
+        count += 1
+        #cont = raw_input("Enter any key to continue")
+    return (nList,edgeList,count-1)
+
+def drawDAG():
+    #WARNING: GLOBAL FUNCTION!!!!!
+    #Drawing time
+    p.ht()
+    p.penup()
+    p.shape("Circle.gif")
+    drawNodes(p, nodeList)
+    p.shape("classic")
+    p.st()
+    for e in edgeList:
+        arrowGenerator(p, e, SBUFFER, EBUFFER)
+
+def prevCallback():
+    cv.delete("all")
     
 #END OF FUNCTIONS
     
@@ -244,7 +313,7 @@ nodeList = []
 edgeList = []
 FLAG = ""
 
-
+#Parse logic
 for line in graphFile:
     #parse each line 
     line = line.strip()
@@ -270,71 +339,28 @@ for n in nodeList:
     if not n.prevn:
         sourceNodeList.append(n)
 
-#Populate table of information
-for i in range(len(nodeList)+1): #Rows
-    for j in range(NUM_COLUMNS_TABLE): #Columns
-        b = tkinter.Label(tableFrame, relief=tkinter.RAISED, width=LABEL_WIDTH)
-        msg = ""
-        fontStyle = ""
-        if not i:
-            fontStyle = "bold"
-            msg = COLUMN_HEADERS.pop(0)
-        else:
-            if j == 0:
-                msg = nodeList[i-1].nodeID
-            if j == 1:
-                msg = DELAY
-            if j == 2:
-                if not nodeList[i-1].prevn:
-                    msg = "Y"
-                else:
-                    msg = "N"
-            if j == 3:
-                msg = nodeList[i-1].label
-            if j == 4:
-                msg = "{"
-                for c in nodeList[i-1].cluster:
-                    msg += c + ","
-                msg = msg[0:len(msg)-1] + "}"
-            fontStyle = "normal"
-        b.config(font=("Times New Roman", FONT_SIZE, fontStyle))
-        b.config(text=msg)
-        b.grid(row=i, column=j)
+displayTable(tableFrame,nodeList)
 
-
-
-needToPlace = True
-count = 0
 start = time.time()
-while (needToPlace):
-    #do placement
-    #print "Attempting Placement Iteration ", count
-    nodeList = nodePlacement(sourceNodeList,nodeList)
-    edgeList = []
-    for srcNode in nodeList:
-        for n in srcNode.nextn:
-            nextNode = retrieveNodeByID(nodeList,n)
-            e = edgeGenerator(srcNode,nextNode)
-            edgeList.append(e)
-    #verify placement
-    needToPlace = verifyPlacement(nodeList,edgeList)
-    #if (needToPlace):
-        #print "Placement Iteration ", count, " Failed"
-    count += 1
-    #cont = raw_input("Enter any key to continue")
+
+(nodeList,edgeList,count) = DAGPLACER(sourceNodeList,nodeList)
 
 end = time.time()
-count -= 1
 print "SUMMARY:\nIterations Required For Placement: ", count, "\nElapsed Time (ms): ", str((end - start )*1000.0)
-#Drawing time
-p.ht()
-p.penup()
-p.shape("Circle.gif")
-drawNodes(p, nodeList)
-p.shape("classic")
-p.st()
-for e in edgeList:
-    arrowGenerator(p, e, SBUFFER, EBUFFER)
+
+#console buttons
+dagButton = tkinter.Button(root, text="DAG", command=drawDAG)
+dagButton.place(x=0,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width = CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
+prevButton = tkinter.Button(root,text="PREV",command=prevCallback)
+prevButton.place(x=CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width = CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
+
+
+
+
+#drawDAG(p,nodeList,edgeList)
+
+#b = Button(master, text="DAG", command=drawDAG)
+
 turtle.done()
 
 root.mainloop()

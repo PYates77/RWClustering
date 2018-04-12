@@ -9,12 +9,19 @@
 #include <vector>
 #include "Node.h"
 
-class Cluster {
-private:
-    std::vector<Node> members;
+class Node;
+
+struct Cluster {
+    std::vector<Node *> members;
+    int id;
     int delay;
+    int calcL1Value();
+    Cluster(int);
+    std::vector<Node *> inputSet;
+    bool static isClusterInList(int cID,std::vector<Cluster*>& cList);
     //TODO: need lists of input/output Nodes? Clusters?
 };
+
 
 
 #endif //RW_CLUSTER_H
