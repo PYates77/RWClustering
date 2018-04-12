@@ -9,7 +9,6 @@
 #include "Node.h"
 #include "Cluster.h"
 #include "common.h"
-#include <chrono>
 #include <algorithm>
 
 namespace sc = std::chrono;
@@ -26,17 +25,16 @@ int NODE_DELAY = 1;
     bool UNIX_RUN = false;
 #endif
 
-std::string BLIFFile = "example_lecture.blif";
+std::string BLIFFile;
 
 void addPredecessors(std::vector<Node *> &m, Node *n);
 
 int main(int argc, char **argv) {
-
     if (UNIX_RUN){
-        std::string BLIFFile = "example_lecture.blif";
+        BLIFFile = "example_lecture.blif";
     }
     else {
-        std::string BLIFFile = "../example_lecture.blif";
+        BLIFFile = "../example_lecture.blif";
     }
 
     //parse arguments
