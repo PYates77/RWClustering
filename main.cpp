@@ -22,14 +22,9 @@ int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
 bool UNIX_RUN = false;
 
-std::string BLIFFile = "../example_lecture.blif";
+std::string BLIFFile = "example_lecture.blif";
 
 void addPredecessors(std::vector<Node *> &m, Node *n);
-
-
-
-
-
 
 int main(int argc, char **argv) {
 
