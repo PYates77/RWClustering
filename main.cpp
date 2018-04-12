@@ -20,7 +20,11 @@ int INTER_CLUSTER_DELAY = 4;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
-bool UNIX_RUN = false;
+#if (defined(LINUX) || defined(__linux__))
+    bool UNIX_RUN = true;
+#else
+    bool UNIX_RUN = false;
+#endif
 
 std::string BLIFFile = "example_lecture.blif";
 
