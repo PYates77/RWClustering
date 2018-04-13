@@ -28,6 +28,7 @@ int NODE_DELAY = 1;
 std::string BLIFFile;
 
 void addPredecessors(std::vector<Node *> &m, Node *n);
+int max_delay(Node*, Node*, std::vector<Node*>);
 
 int main(int argc, char **argv) {
     if (UNIX_RUN){
@@ -166,7 +167,7 @@ int main(int argc, char **argv) {
     auto delayMEnd = sc::high_resolution_clock::now();
 
     // DEBUG
-    /*
+
     std::cout << "DELAY MATRIX:" << std::endl;
     for (auto m : master){
         std::cout << "\t" << m->strID;
@@ -179,7 +180,29 @@ int main(int argc, char **argv) {
         }
         std::cout << std::endl;
     }
-    */
+    // check delay matrix against max_delay calculation (DEBUG)
+    bool max_delay_consistent = true;
+    std::cout << "MAX DELAY CALC RESULTS:" << std::endl;
+    for (auto m : master){
+        std::cout << "\t" << m->strID;
+    }
+    std::cout << std::endl;
+    for(int i = 0; i < N; ++i){
+        std::cout << master.at(i)->strID;
+        for(int j=0; j < N; ++j){
+            int m_d = max_delay(master.at(i),master.at(j),master);
+            std::cout << "\t" << m_d;
+            if(m_d != delay_matrix[N*i+j]) max_delay_consistent = false;
+
+        }
+        std::cout << std::endl;
+    }
+    if(max_delay_consistent){
+        std::cout << "max_delay function PASSED consistency check" << std::endl;
+    }
+    else{
+        std::cout << "max_delay function FAILED consistency check" << std::endl;
+    }
 
 
     std::cout << "Delay Matrix Calculation Complete" << std::endl;
@@ -375,4 +398,28 @@ void addPredecessors(std::vector<Node *> &m, Node *n){
     //std::cout << "Adding " << n->strID  << " to master." << std::endl; //debug
 }
 
-
+//find longest path in the DAG using topological ordering properties
+//requirement: nodes must be topologically sorted with sequential IDs (starting at 0)
+int max_delay(Node* src, Node* dst, std::vector<Node *> nodes){
+    if(src->id >= dst->id) return 0; //no path between these nodes if src does not come before dst
+    int offset = src->id; //use offset to avoid making the delays array longer than necessary
+    int delays[dst->id - offset + 1]; //a delay value for all topological nodes between src and dst (inclusive)
+    for(int i=0; i<=dst->id-offset; ++i){ //initialize delays vector to -1 for each node
+        delays[i] = -1;
+    }
+    //set delay of source to 0
+    delays[0] =  0;
+    for(int i=0; i<dst->id-offset; ++i){
+        if(delays[i] != -1){
+            for(auto it = nodes[i+offset]->next.begin(); it != nodes[i+offset]->next.end(); ++it){
+                if((*it)->id <= dst->id) { //don't operate on nodes which come topologically after dst
+                    if(delays[(*it)->id - offset] < delays[i]+(*it)->delay){
+                        delays[(*it)->id - offset] = delays[i]+(*it)->delay;
+                    }
+                }
+            }
+        }
+    }
+    if(delays[dst->id - offset] == -1) return 0; //if there was no path from src to dst, return 0
+    return delays[dst->id - offset];
+}
