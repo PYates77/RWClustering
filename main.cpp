@@ -19,7 +19,7 @@ int INTER_CLUSTER_DELAY = 4;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
-bool USE_DELAY_MATRIX = true; //todo: implement
+bool USE_DELAY_MATRIX = false;
 #if (defined(LINUX) || defined(__linux__))
     bool UNIX_RUN = true;
 #else
@@ -123,65 +123,66 @@ int main(int argc, char **argv) {
     std::cout << "]" << std::endl;
     */
 
-
-    //////     COMPUTE DELAY MATRIX //////
-
-    // delay_matrix[x][y] = max delay from output x to output y (node delay only)
-
-    auto delay_matrix = new int[N*N]; // Delay matrix is NxN square matrix.
-    //todo: convert this into a sparse matrix
-
-    //delay_matrix[N*r+c] (aka delay_matrix[r][c]) represents max delay from node r to node c
-    //the matrix entry = 0 if c precedes r in topological order
-    std::vector<Node *>::const_iterator r; //the node corresponding to the current matrix row
-    std::vector<Node *>::const_iterator c; // the node corresponding to the  current matrix column
-
     auto delayMStart = sc::high_resolution_clock::now();
-    for(r = master.begin(); r != master.end();++r){ // iterate across every row
-        //delay between a node and any previous node (and itself) is 0
-        for(c = master.begin(); c != r+1; ++c) delay_matrix[N * (*r)->id + (*c)->id] = 0;
-        for(c = r+1; c != master.end(); ++c) {
-            //max_delay(r,c) = max( max_delay(r, c->prev) )
-            int max=0;
-            int prev_delay;
-            for(Node* p : (*c)->prev){
-                prev_delay = delay_matrix[N*(*r)->id+p->id];
-                if(prev_delay > max) {
-                    max = prev_delay;
-                    //std::cout << "Found that " << (*c)->strID << "'s predecessor, " << (*p)->strID << ", has delay " << prev_delay << " to " << (*r)->strID << std::endl; //debug
-                }
-            }
-            //if no predecessors of c have a delay to r, then either r is a direct predecessor, or there is no link
-            if(max == 0) {
-                delay_matrix[N * (*r)->id + (*c)->id] = 0;
+    int* delay_matrix;
+    if(USE_DELAY_MATRIX) {
+        //////     COMPUTE DELAY MATRIX //////
+        // delay_matrix[x][y] = max delay from output x to output y (node delay only)
+        delay_matrix = new int[N * N]; // Delay matrix is NxN square matrix.
+        //todo: convert this into a sparse matrix
+
+        //delay_matrix[N*r+c] (aka delay_matrix[r][c]) represents max delay from node r to node c
+        //the matrix entry = 0 if c precedes r in topological order
+        std::vector<Node *>::const_iterator r; //the node corresponding to the current matrix row
+        std::vector<Node *>::const_iterator c; // the node corresponding to the  current matrix column
+
+        for (r = master.begin(); r != master.end(); ++r) { // iterate across every row
+            //delay between a node and any previous node (and itself) is 0
+            for (c = master.begin(); c != r + 1; ++c) delay_matrix[N * (*r)->id + (*c)->id] = 0;
+            for (c = r + 1; c != master.end(); ++c) {
+                //max_delay(r,c) = max( max_delay(r, c->prev) )
+                int max = 0;
+                int prev_delay;
                 for (Node *p : (*c)->prev) {
-                    if (p->id == (*r)->id) {
-                        delay_matrix[N * (*r)->id + (*c)->id] = (*c)->delay;
+                    prev_delay = delay_matrix[N * (*r)->id + p->id];
+                    if (prev_delay > max) {
+                        max = prev_delay;
+                        //std::cout << "Found that " << (*c)->strID << "'s predecessor, " << (*p)->strID << ", has delay " << prev_delay << " to " << (*r)->strID << std::endl; //debug
                     }
                 }
+                //if no predecessors of c have a delay to r, then either r is a direct predecessor, or there is no link
+                if (max == 0) {
+                    delay_matrix[N * (*r)->id + (*c)->id] = 0;
+                    for (Node *p : (*c)->prev) {
+                        if (p->id == (*r)->id) {
+                            delay_matrix[N * (*r)->id + (*c)->id] = (*c)->delay;
+                        }
+                    }
+                } else {
+                    delay_matrix[N * (*r)->id + (*c)->id] = (*c)->delay + max;
+                }
+                //std::cout << "Delay from " << (*r)->strID << " to " << (*c)->strID << " is " << delay_matrix[N*(*r)->id+(*c)->id]<< std::endl; //debug
             }
-            else{
-                delay_matrix[N * (*r)->id + (*c)->id] = (*c)->delay + max;
-            }
-            //std::cout << "Delay from " << (*r)->strID << " to " << (*c)->strID << " is " << delay_matrix[N*(*r)->id+(*c)->id]<< std::endl; //debug
-        }
 
+        }
     }
     auto delayMEnd = sc::high_resolution_clock::now();
 
+    /*
     // DEBUG
-
-    std::cout << "DELAY MATRIX:" << std::endl;
-    for (auto m : master){
-        std::cout << "\t" << m->strID;
-    }
-    std::cout << std::endl;
-    for(uint32_t i = 0; i < N; ++i){
-        std::cout << master.at(i)->strID;
-        for(int j=0; j < N; ++j){
-            std::cout << "\t" << delay_matrix[N*i+j];
+    if(USE_DELAY_MATRIX) {
+        std::cout << "DELAY MATRIX:" << std::endl;
+        for (auto m : master) {
+            std::cout << "\t" << m->strID;
         }
         std::cout << std::endl;
+        for (uint32_t i = 0; i < N; ++i) {
+            std::cout << master.at(i)->strID;
+            for (int j = 0; j < N; ++j) {
+                std::cout << "\t" << delay_matrix[N * i + j];
+            }
+            std::cout << std::endl;
+        }
     }
     // check delay matrix against max_delay calculation (DEBUG)
     bool max_delay_consistent = true;
@@ -195,17 +196,21 @@ int main(int argc, char **argv) {
         for(uint32_t j=0; j < N; ++j){
             int m_d = max_delay(master.at(i),master.at(j),master);
             std::cout << "\t" << m_d;
-            if(m_d != delay_matrix[N*i+j]) max_delay_consistent = false;
+            if(USE_DELAY_MATRIX) {
+                if (m_d != delay_matrix[N * i + j]) max_delay_consistent = false;
+            }
 
         }
         std::cout << std::endl;
     }
-    if(max_delay_consistent){
-        std::cout << "max_delay function PASSED consistency check" << std::endl;
+    if(USE_DELAY_MATRIX) {
+        if (max_delay_consistent) {
+            std::cout << "max_delay function PASSED consistency check" << std::endl;
+        } else {
+            std::cout << "max_delay function FAILED consistency check" << std::endl;
+        }
     }
-    else{
-        std::cout << "max_delay function FAILED consistency check" << std::endl;
-    }
+     */
 
 
     std::cout << "Delay Matrix Calculation Complete" << std::endl;
@@ -245,7 +250,12 @@ int main(int argc, char **argv) {
 
         // calculate label_v(x)
         for(auto x : S){
-            x->label_v = x->label + delay_matrix[N*x->id+v->id];
+            if(USE_DELAY_MATRIX) {
+                x->label_v = x->label + delay_matrix[N * x->id + v->id];
+            }
+            else{
+                x->label_v = x->label + max_delay(x,v,master);
+            }
         }
 
         // copy Gv to S, which forces ordering to occur
@@ -386,7 +396,9 @@ int main(int argc, char **argv) {
 
     verboseFile.close();
 
-    delete[] delay_matrix;
+    if(USE_DELAY_MATRIX) {
+        delete[] delay_matrix;
+    }
 
     return 0;
 }
