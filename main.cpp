@@ -19,6 +19,7 @@ int INTER_CLUSTER_DELAY = 4;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
+bool USE_DELAY_MATRIX = true; //todo: implement
 #if (defined(LINUX) || defined(__linux__))
     bool UNIX_RUN = true;
 #else
@@ -38,13 +39,15 @@ int main(int argc, char **argv) {
         BLIFFile = "../example_lecture.blif";
     }
 
-    //parse arguments
+    //parse arguments todo: decide on command line option format (use getopt_long for long form arguments)
     int flag;
     while((flag = getopt(argc, argv, "s:")) != -1){
         switch(flag){
             case 's':
                 MAX_CLUSTER_SIZE = std::atoi(optarg);
                 break;
+            default:
+                abort();
         }
     }
 
@@ -102,7 +105,7 @@ int main(int argc, char **argv) {
     //number the nodes in order for use in indexing the delay_matrix array
 
     auto labelInitialStart = sc::high_resolution_clock::now();
-    int id = 0;
+    uint32_t id = 0;
     for(auto node : master){
         node->id = id++;
         //apply initial labeling (PI label = delay, non-PI label = 0)
@@ -125,7 +128,7 @@ int main(int argc, char **argv) {
 
     // delay_matrix[x][y] = max delay from output x to output y (node delay only)
 
-    int* delay_matrix = new int[N*N]; // Delay matrix is NxN square matrix.
+    auto delay_matrix = new int[N*N]; // Delay matrix is NxN square matrix.
     //todo: convert this into a sparse matrix
 
     //delay_matrix[N*r+c] (aka delay_matrix[r][c]) represents max delay from node r to node c
@@ -173,7 +176,7 @@ int main(int argc, char **argv) {
         std::cout << "\t" << m->strID;
     }
     std::cout << std::endl;
-    for(int i = 0; i < N; ++i){
+    for(uint32_t i = 0; i < N; ++i){
         std::cout << master.at(i)->strID;
         for(int j=0; j < N; ++j){
             std::cout << "\t" << delay_matrix[N*i+j];
@@ -187,9 +190,9 @@ int main(int argc, char **argv) {
         std::cout << "\t" << m->strID;
     }
     std::cout << std::endl;
-    for(int i = 0; i < N; ++i){
+    for(uint32_t i = 0; i < N; ++i){
         std::cout << master.at(i)->strID;
-        for(int j=0; j < N; ++j){
+        for(uint32_t j=0; j < N; ++j){
             int m_d = max_delay(master.at(i),master.at(j),master);
             std::cout << "\t" << m_d;
             if(m_d != delay_matrix[N*i+j]) max_delay_consistent = false;
@@ -253,13 +256,13 @@ int main(int argc, char **argv) {
 
         // pop first element from S and add to c until max cluster size reached or S is empty
         for(int i=1; i<MAX_CLUSTER_SIZE; ++i) { //i starts at 1 to include initial element already in cluster
-            if(S.size() == 0) break;
+            if(S.empty()) break;
             cl.members.push_back(*S.begin());
             S.erase(S.begin());
         }
 
         int L2 = 0;
-        if (S.size() != 0){
+        if (!S.empty()){
 
             L2 = (*S.begin())->label_v + INTER_CLUSTER_DELAY;
         }
@@ -312,11 +315,11 @@ int main(int argc, char **argv) {
         L.erase(L.begin());
 
         //add cluster to finalClusterList
-        Cluster* c = &(clusters.at(lNode->id));
-        finalClusterList.push_back(c);
+        Cluster* cl = &(clusters.at(lNode->id));
+        finalClusterList.push_back(cl);
 
         //add any node in input(lNode's cluster) whose cluster is not in the finalClusterList
-        for (auto iNode : c->inputSet){
+        for (auto iNode : cl->inputSet){
             if (!Cluster::isClusterInList(iNode->id,finalClusterList) && retrieveNodeByStr_ptr(iNode->strID,L) == nullptr){
                 L.push_back(iNode);
             }
@@ -376,7 +379,7 @@ int main(int argc, char **argv) {
     verboseFile << "MAX IO PATH DELAY:\t" << maxIODelay << std::endl;
     std::cout << "----------EXECUTION TIMES----------" << std::endl;
     verboseFile << "\n----------EXECUTION TIMES----------\n" << std::endl;
-    for (int i=0; i < execStrs.size(); ++i){
+    for (uint32_t i=0; i < execStrs.size(); ++i){
         std::cout << execStrs.at(i) << ":\t" << execTimes.at(i).first << execTimes.at(i).second << std::endl;
         verboseFile << execStrs.at(i) << ":\t" << execTimes.at(i).first << execTimes.at(i).second << std::endl;
     }

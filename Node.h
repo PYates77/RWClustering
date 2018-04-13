@@ -17,7 +17,7 @@ public:
     std::vector<Node *> prev;
     std::vector<Node *> next;
     int delay; //ASSUME INTEGER DELAY
-    int id;
+    uint32_t id;
     bool visited;
     int label = 0;
     int label_v = 0;
