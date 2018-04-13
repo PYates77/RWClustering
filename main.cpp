@@ -47,12 +47,14 @@ int main(int argc, char **argv) {
         }
     }
 
+    /*
     std::cout << "RWClustering Application" << "\nAuthors: Akshay Nagendra <akshaynag@gatech.edu>, Paul Yates <pyates6@gatech.edu>" << std::endl;
     std::cout << "------------------------------------" << std::endl;
     std::cout << "Max Cluster Size = " << MAX_CLUSTER_SIZE << std::endl;
     std::cout << "Inter Cluster Delay = " << INTER_CLUSTER_DELAY << std::endl;
     std::cout << "PI Node Delay = " << PRIMARY_INPUT_DELAY << std::endl;
     std::cout << "Normal Node/PO Node Delay = " << 1 << std::endl;
+     */
     std::vector<Node> rawNodeList;
 
     auto parsestart = sc::high_resolution_clock::now();
@@ -254,9 +256,11 @@ int main(int argc, char **argv) {
     std::cout << "Calculation of Labels and Clusters Complete" << std::endl;
 
     //DEBUG
+    /*
     for (auto m : master){
         std::cout << "LABEL FOR NODE " << m->strID << ": " << m->label << std::endl;
     }
+    */
     /*
     for(auto cluster : clusters){
         std::cout << "\nCluster " << cluster.id << "(" << master.at(cluster.id)->strID << ") has: " << std::endl;
@@ -298,6 +302,7 @@ int main(int argc, char **argv) {
     auto clusterPhaseEnd = sc::high_resolution_clock::now();
 
     //DEBUG
+    /*
     std::cout << "FINAL CLUSTER LIST: " << std::endl;
     for (auto c : finalClusterList){
         std::cout << "CLUSTER " << master.at(c->id)->strID << ": [";
@@ -306,12 +311,22 @@ int main(int argc, char **argv) {
         }
         std::cout << "]" << std::endl;
     }
+    */
 
 
     std::cout << "PROGRAM COMPLETE" << std::endl;
     //todo: output to file and possibly GUI
 
     //STATISTICS
+
+    //print to files
+    writeOutputFiles(BLIFFile.substr(0,BLIFFile.length()-5),
+                     master,clusters,finalClusterList,
+                     MAX_CLUSTER_SIZE,INTER_CLUSTER_DELAY,PRIMARY_INPUT_DELAY,PRIMARY_OUTPUT_DELAY,NODE_DELAY);
+
+    std::ofstream verboseFile;
+    verboseFile.open("output_" + BLIFFile.substr(0,BLIFFile.length()-5) + "_verbose.txt",std::fstream::app);
+
     std::vector<std::pair<long long int,std::string>> execTimes;
     std::vector<std::string> execStrs = {"PARSING AND POPULATION OF ALL NODES",
                                          "TOPOLOGICAL SORTING",
@@ -329,13 +344,21 @@ int main(int argc, char **argv) {
 
     //print out execution times for each code section
     std::cout << "\n------------------------------------\nSTATISTICS:" << std::endl;
+    verboseFile << "\n----------STATISTICS----------\n" << std::endl;
     std::cout << "TOTAL NUMBER OF NODES:\t" << N << std::endl;
+    verboseFile << "TOTAL NUMBER OF NODES:\t" << N << std::endl;
     std::cout << "NUMBER OF CLUSTERS:\t" << finalClusterList.size() << std::endl;
+    verboseFile << "NUMBER OF CLUSTERS:\t" << finalClusterList.size() << std::endl;
     std::cout << "MAX IO PATH DELAY:\t" << maxIODelay << std::endl;
+    verboseFile << "MAX IO PATH DELAY:\t" << maxIODelay << std::endl;
     std::cout << "----------EXECUTION TIMES----------" << std::endl;
+    verboseFile << "\n----------EXECUTION TIMES----------\n" << std::endl;
     for (int i=0; i < execStrs.size(); ++i){
         std::cout << execStrs.at(i) << ":\t" << execTimes.at(i).first << execTimes.at(i).second << std::endl;
+        verboseFile << execStrs.at(i) << ":\t" << execTimes.at(i).first << execTimes.at(i).second << std::endl;
     }
+
+    verboseFile.close();
 
     delete[] delay_matrix;
 

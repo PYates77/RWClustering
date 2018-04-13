@@ -10,6 +10,7 @@
 #include <iostream>
 #include <chrono>
 
+#define CLUSTER_SIZE_LIMIT 10
 
 
 Node* retrieveNodeByStr(std::string nodeID, std::vector<Node> &nodeList){
@@ -174,19 +175,39 @@ void parseBLIF(std::string filename, int& piDelay, int& poDelay, int& nodeDelay,
                     driver->next.push_back(&(*iN));
                 }
                 else {
-                    std::cout << "Error: Driver not found" << std::endl;
-                    exit(-1);
+                    driver = retrieveNodeByStr(*is + "_IL",rawNodeList);
+                    if (driver != nullptr){
+                        iN->prev.push_back(driver);
+                        driver->next.push_back(&(*iN));
+                    }
+                    else {
+                        std::cout << "Error: Gate Driver Not Found" << std::endl;
+                        exit(-1);
+                    }
                 }
 
             }
         }
         else if (iN->strID.length() > 3){
-            if (iN->strID.substr(iN->strID.length()-3,3) == "_IL") {
-                //TODO (AKSHAY): the node is a PI latch which we need to setup correctly
-
-
-            } else if (iN->strID.substr(iN->strID.length()-3,3) == "_OL") {
-                //TODO (AKSHAY): the node is a PO latch which we need to setup correctly
+            if (iN->strID.substr(iN->strID.length()-3,3) == "_OL") {
+                //the node is a PO latch which we need to setup correctly
+                Node *driver = retrieveNodeByStr(iN->strID.substr(0,iN->strID.length()-3),rawNodeList);
+                if (driver != nullptr){
+                    driver->next.push_back(&(*iN));
+                    iN->prev.push_back(driver);
+                }
+                else {
+                    driver = retrieveNodeByStr(iN->strID.substr(0,iN->strID.length()-3) + "_IL",rawNodeList);
+                    if (driver != nullptr){
+                        driver->next.push_back(&(*iN));
+                        iN->prev.push_back(driver);
+                    }
+                    else {
+                        //ERROR
+                        std::cout << "Error: Latch Driver Not Found" << std::endl;
+                        exit(-2);
+                    }
+                }
             }
         }
     }
@@ -254,6 +275,107 @@ std::pair<long long int,std::string> measureExecTime(std::chrono::time_point<std
         }
     }
     return result;
+}
+
+void writeOutputFiles(std::string circuitName,
+                      std::vector<Node*>& topoNodeList,
+                      std::vector<Cluster>& clList,
+                      std::vector<Cluster*>& clListFinal,
+                      int& cmdMaxClusterSize,
+                      int& cmdInterClusterDelay,
+                      int& cmdPiDelay,
+                      int& cmdPoDelay,
+                      int& cmdNodeDelay)
+{
+    //Description: function for writing to the output files for the application
+    bool tooLargeForTable = cmdMaxClusterSize > CLUSTER_SIZE_LIMIT;
+    std::ofstream resultTable;
+    std::ofstream verboseResult;
+    std::ofstream clustrTable;
+
+    resultTable.open("output_" + circuitName + "_table.csv");
+    verboseResult.open("output_" + circuitName + "_verbose.txt");
+    clustrTable.open("output_" + circuitName + "_cluster.csv");
+
+    if (tooLargeForTable){ resultTable << "NODE,PI?,PO?,NODE DELAY,NODE LABEL,CLUSTER SIZE" << std::endl; }
+    else { resultTable << "NODE,PI?,PO?,NODE DELAY,NODE LABEL,CLUSTER SIZE,CLUSTER CONTENTS" << std::endl; }
+
+    verboseResult << "Rajaraman-Wong Clustering Application\nAkshay Nagendra <akshaynag@gatech.edu>, Paul Yates <paul.maxyat@gatech.edu>" << std::endl;
+    verboseResult << "\n----------COMMAND LINE PARAMETERS----------\n" << std::endl;
+    verboseResult << "Input Netlist: " << circuitName << ".blif" << std::endl;
+    verboseResult << "Max Cluster Size: " << cmdMaxClusterSize << std::endl;
+    verboseResult << "Inter Cluster Delay: " << cmdInterClusterDelay << std::endl;
+    verboseResult << "Primary Input Delay: " << cmdPiDelay << std::endl;
+    verboseResult << "Primary Output Delay: " << cmdPoDelay << std::endl;
+    verboseResult << "Node Delay: " << cmdNodeDelay << "\n" << std::endl;
+    verboseResult << "----------NODE INFORMATION----------\n" << std::endl;
+
+    for (int i=0; i < topoNodeList.size(); ++i){
+        resultTable << topoNodeList.at(i)->strID << ",";
+        verboseResult << "NODE " << topoNodeList.at(i)->strID << ":" << std::endl;
+        std::string pi = (topoNodeList.at(i)->isPI) ?  "Y" : "N";
+        std::string po = (topoNodeList.at(i)->isPO) ?  "Y" : "N";
+        resultTable << pi << "," << po << ",";
+        verboseResult << "\tPI?: " << pi << "\n\tPO?: " << po << std::endl;
+        resultTable << topoNodeList.at(i)->delay << ",";
+        verboseResult << "\tDELAY: " << topoNodeList.at(i)->delay << std::endl;
+        resultTable << topoNodeList.at(i)->label << ",";
+        verboseResult << "\tLABEL: " << topoNodeList.at(i)->label << std::endl;
+        resultTable << clList.at(i).members.size();
+        if (!tooLargeForTable){
+            resultTable << ",";
+        }
+        verboseResult << "\tCLUSTER SIZE: " << clList.at(i).members.size() << std::endl;
+
+        verboseResult << "\tCLUSTER MEMBERS: ";
+        int count = 0;
+        for (auto clMem : clList.at(i).members) {
+            if(!tooLargeForTable){
+                resultTable << clMem->strID << " ";
+            }
+            if (count == clList.at(i).members.size()-1){
+                verboseResult << clMem->strID;
+            }
+            else {
+                verboseResult << clMem->strID << ", ";
+            }
+            count += 1;
+        }
+        verboseResult << std::endl;
+        resultTable << std::endl;
+    }
+    resultTable.close();
+
+    verboseResult << "\n----------FORMED CLUSTER INFORMATION----------\n" << std::endl;
+
+    if (tooLargeForTable) { clustrTable << "CLUSTER ROOT NODE,CLUSTER SIZE" << std::endl; }
+    else { clustrTable << "CLUSTER ROOT NODE,CLUSTER SIZE,CLUSTER CONTENTS" << std::endl; }
+    for (auto cl : clListFinal){
+        clustrTable << topoNodeList.at(cl->id)->strID << "," << cl->members.size();
+        if (!tooLargeForTable){
+            clustrTable << ",";
+        }
+        verboseResult << "CLUSTER ROOT NODE: " << topoNodeList.at(cl->id)->strID << std::endl;
+        verboseResult << "\tCLUSTER SIZE: " << cl->members.size() << std::endl;
+        verboseResult << "\tCLUSTER MEMBERS: ";
+
+        int count = 0;
+        for (auto clMem : cl->members) {
+            if (!tooLargeForTable) {
+                clustrTable << clMem->strID << " ";
+            }
+            if (count == cl->members.size()-1){
+                verboseResult << clMem->strID;
+            }
+            else {
+                verboseResult << clMem->strID << ", ";
+            }
+            count += 1;
+        }
+        verboseResult << std::endl;
+        clustrTable << std::endl;
+    }
+    clustrTable.close();
 }
 
 
