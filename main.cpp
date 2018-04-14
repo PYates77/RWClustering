@@ -14,12 +14,13 @@
 namespace sc = std::chrono;
 
 //TODO: USER PARAMETERS (SHOULD BE COMMAND LINE DRIVEN)
-int MAX_CLUSTER_SIZE = 4; //default value = 20
+int MAX_CLUSTER_SIZE = 10; //default value = 10
 int INTER_CLUSTER_DELAY = 4;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
-bool USE_DELAY_MATRIX = false;
+bool USE_DELAY_MATRIX = true;
+std::string FILENAME = "example_lecture.blif";
 #if (defined(LINUX) || defined(__linux__))
     bool UNIX_RUN = true;
 #else
@@ -33,10 +34,10 @@ int max_delay(Node*, Node*, std::vector<Node*>);
 
 int main(int argc, char **argv) {
     if (UNIX_RUN){
-        BLIFFile = "example_lecture.blif";
+        BLIFFile = FILENAME;
     }
     else {
-        BLIFFile = "../example_lecture.blif";
+        BLIFFile = "../" + FILENAME;
     }
 
     //parse arguments todo: decide on command line option format (use getopt_long for long form arguments)
@@ -168,40 +169,41 @@ int main(int argc, char **argv) {
     }
     auto delayMEnd = sc::high_resolution_clock::now();
 
-    /*
+
     // DEBUG
+    /*
     if(USE_DELAY_MATRIX) {
-        std::cout << "DELAY MATRIX:" << std::endl;
+        //std::cout << "DELAY MATRIX:" << std::endl;
         for (auto m : master) {
-            std::cout << "\t" << m->strID;
+            //std::cout << "\t" << m->strID;
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
         for (uint32_t i = 0; i < N; ++i) {
-            std::cout << master.at(i)->strID;
+            //std::cout << master.at(i)->strID;
             for (int j = 0; j < N; ++j) {
-                std::cout << "\t" << delay_matrix[N * i + j];
+                //std::cout << "\t" << delay_matrix[N * i + j];
             }
-            std::cout << std::endl;
+            //std::cout << std::endl;
         }
     }
     // check delay matrix against max_delay calculation (DEBUG)
     bool max_delay_consistent = true;
-    std::cout << "MAX DELAY CALC RESULTS:" << std::endl;
+    //std::cout << "MAX DELAY CALC RESULTS:" << std::endl;
     for (auto m : master){
-        std::cout << "\t" << m->strID;
+        //std::cout << "\t" << m->strID;
     }
     std::cout << std::endl;
     for(uint32_t i = 0; i < N; ++i){
-        std::cout << master.at(i)->strID;
+        //std::cout << master.at(i)->strID;
         for(uint32_t j=0; j < N; ++j){
             int m_d = max_delay(master.at(i),master.at(j),master);
-            std::cout << "\t" << m_d;
+            //std::cout << "\t" << m_d;
             if(USE_DELAY_MATRIX) {
                 if (m_d != delay_matrix[N * i + j]) max_delay_consistent = false;
             }
 
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
     }
     if(USE_DELAY_MATRIX) {
         if (max_delay_consistent) {
@@ -210,7 +212,7 @@ int main(int argc, char **argv) {
             std::cout << "max_delay function FAILED consistency check" << std::endl;
         }
     }
-     */
+    */
 
 
     std::cout << "Delay Matrix Calculation Complete" << std::endl;

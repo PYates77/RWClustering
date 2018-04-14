@@ -12,10 +12,15 @@
 
 #define CLUSTER_SIZE_LIMIT 10
 
+std::string INPUT_LATCH_PREFIX = "[IL]";
+std::string OUTPUT_LATCH_PREFIX = "[OL]";
+long long int MAX_PREFIX_LENGTH = (INPUT_LATCH_PREFIX.length() >= OUTPUT_LATCH_PREFIX.length()) ? INPUT_LATCH_PREFIX.length() : OUTPUT_LATCH_PREFIX.length();
+
 
 Node* retrieveNodeByStr(std::string nodeID, std::vector<Node> &nodeList){
     //DESCRIPTION: Helper function to retrieve a node's pointer
     for (std::vector<Node>::iterator iN = nodeList.begin(); iN < nodeList.end(); ++iN){
+        //std::cout << "CHECKING FOR: " << nodeID << "; FOUND " << iN->strID << std::endl;
         if (iN->strID == nodeID){
             //Match found!
             return &(*iN);
@@ -37,7 +42,7 @@ Node* retrieveNodeByStr_ptr(std::string nodeID, std::vector<Node*> &nodeList){
 std::string ripBadChars(std::string str){
     std::string result = "";
     for (int i=0; i < str.length(); ++i){
-        if (str[i] == '\0' || str[i] == '\r' || str[i] == ' ' || str[i] == '\n'){
+        if (str[i] == '\0' || str[i] == '\r' || str[i] == ' ' || str[i] == '\t' || str[i] == '\n'){
             continue;
         }
         result.push_back(str[i]);
@@ -45,20 +50,60 @@ std::string ripBadChars(std::string str){
     return result;
 }
 
-std::vector<std::string> delimStr(std::string line,std::string delim){
-    std::size_t pos = 0;
+std::vector<std::string> strSplitter(std::string line){
+    std::size_t pos = 0, posSpace =0, posTab = 0;
     std::vector<std::string> result;
-    while ((pos=line.find_first_of(delim)) != std::string::npos){
+    posSpace = line.find_first_of(" ");
+    posTab = line.find_first_of("\t");
+    if (posSpace != std::string::npos && posTab != std::string::npos){
+        pos = (posSpace < posTab ) ? posSpace : posTab;
+    }
+    else {
+        if (posSpace == std::string::npos && posTab != std::string::npos){
+            pos = posTab;
+        }
+        else if (posSpace != std::string::npos && posTab == std::string::npos) {
+            pos = posSpace;
+        }
+        else {
+            //both are npos
+            result.push_back(line);
+            return result;
+        }
+    }
+
+    while (pos != std::string::npos){
         std::string subStr = line.substr(0,pos);
         //std::cout << subStr << std::endl;
+        std::string resStr = ripBadChars(subStr);
         if (subStr != "") {
-            std::string resStr = ripBadChars(subStr);
             result.push_back(resStr);
         }
-        line.erase(0,subStr.length() + delim.length());
+        line.erase(0,subStr.length() + 1); //" " and "\t" are one char
+
+        posSpace = line.find_first_of(" ");
+        posTab = line.find_first_of("\t");
+        if (posSpace != std::string::npos && posTab != std::string::npos){
+            pos = (posSpace < posTab ) ? posSpace : posTab;
+        }
+        else {
+            if (posSpace == std::string::npos && posTab != std::string::npos){
+                pos = posTab;
+            }
+            else if (posSpace != std::string::npos && posTab == std::string::npos) {
+                pos = posSpace;
+            }
+            else {
+                //both are npos
+                pos = std::string::npos;
+            }
+        }
+
     }
     std::string resStr = ripBadChars(line);
-    result.push_back(resStr);
+    if (resStr != ""){
+        result.push_back(resStr);
+    }
     return result;
 }
 
@@ -79,7 +124,7 @@ void parseBLIF(std::string filename, int& piDelay, int& poDelay, int& nodeDelay,
         std::string modeStr = "";
         while(std::getline(blifFile,line)) {
             //std::cout << line << std::endl;
-            std::vector<std::string> signals = delimStr(line," ");
+            std::vector<std::string> signals = strSplitter(line);
 
             if (signals.at(0) == inputStr || modeStr == inputStr){
                 std::vector<std::string>::iterator iS = (modeStr == "") ? signals.begin()+1 : signals.begin();
@@ -122,7 +167,7 @@ void parseBLIF(std::string filename, int& piDelay, int& poDelay, int& nodeDelay,
                     if (!argCount) {
                         //Input of Latch becomes PO
                         Node n(poDelay);
-                        n.strID = signals.at(1) + "_OL";
+                        n.strID = signals.at(1) + OUTPUT_LATCH_PREFIX;
                         n.isPO = true;
                         n.isPI = false;
                         rawNodeList.push_back(n);
@@ -130,7 +175,7 @@ void parseBLIF(std::string filename, int& piDelay, int& poDelay, int& nodeDelay,
                     else {
                         //Output of Latch becomes PI
                         Node n(piDelay);
-                        n.strID = signals.at(2) + "_IL";
+                        n.strID = signals.at(2) + INPUT_LATCH_PREFIX;
                         n.isPI = true;
                         n.isPO = false;
                         rawNodeList.push_back(n);
@@ -160,6 +205,12 @@ void parseBLIF(std::string filename, int& piDelay, int& poDelay, int& nodeDelay,
 
     }  //ENDIF BLIF OPEN
 
+    /*
+    for (auto node : rawNodeList){
+        std::cout << "NODE: " << node.strID << std::endl;
+    }
+    */
+
     //fix the rawNodeList structure
     //std::cout << "SECONDARY PARSE RUN" << std::endl;
 
@@ -167,7 +218,7 @@ void parseBLIF(std::string filename, int& piDelay, int& poDelay, int& nodeDelay,
         iN->addr = &(*iN);
         if (iN->procStr != ""){
             //std::cout << iN->strID << std::endl;
-            std::vector<std::string> nStrList = delimStr(iN->procStr," ");
+            std::vector<std::string> nStrList = strSplitter(iN->procStr);
             for (std::vector<std::string>::iterator is = nStrList.begin()+1; is < nStrList.end()-1; ++is){
                 Node *driver = retrieveNodeByStr(*is, rawNodeList);
                 if (driver != nullptr){
@@ -175,29 +226,29 @@ void parseBLIF(std::string filename, int& piDelay, int& poDelay, int& nodeDelay,
                     driver->next.push_back(&(*iN));
                 }
                 else {
-                    driver = retrieveNodeByStr(*is + "_IL",rawNodeList);
+                    driver = retrieveNodeByStr(*is + INPUT_LATCH_PREFIX,rawNodeList);
                     if (driver != nullptr){
                         iN->prev.push_back(driver);
                         driver->next.push_back(&(*iN));
                     }
                     else {
-                        std::cout << "Error: Gate Driver Not Found" << std::endl;
+                        std::cout << "Error: Gate Driver Not Found: " << *is << std::endl;
                         exit(-1);
                     }
                 }
 
             }
         }
-        else if (iN->strID.length() > 3){
-            if (iN->strID.substr(iN->strID.length()-3,3) == "_OL") {
+        else if (iN->strID.length() > MAX_PREFIX_LENGTH){
+            if (iN->strID.substr(iN->strID.length()-OUTPUT_LATCH_PREFIX.length(),OUTPUT_LATCH_PREFIX.length()) == OUTPUT_LATCH_PREFIX) {
                 //the node is a PO latch which we need to setup correctly
-                Node *driver = retrieveNodeByStr(iN->strID.substr(0,iN->strID.length()-3),rawNodeList);
+                Node *driver = retrieveNodeByStr(iN->strID.substr(0,iN->strID.length()-4),rawNodeList);
                 if (driver != nullptr){
                     driver->next.push_back(&(*iN));
                     iN->prev.push_back(driver);
                 }
                 else {
-                    driver = retrieveNodeByStr(iN->strID.substr(0,iN->strID.length()-3) + "_IL",rawNodeList);
+                    driver = retrieveNodeByStr(iN->strID.substr(0,iN->strID.length()-INPUT_LATCH_PREFIX.length()) + INPUT_LATCH_PREFIX,rawNodeList);
                     if (driver != nullptr){
                         driver->next.push_back(&(*iN));
                         iN->prev.push_back(driver);
