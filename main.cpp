@@ -21,6 +21,7 @@ int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
 bool USE_DELAY_MATRIX = true;
 std::string FILENAME = "example_lecture.blif";
+bool USE_LAWLER_LABELING = false;
 #if (defined(LINUX) || defined(__linux__))
     bool UNIX_RUN = true;
 #else
@@ -31,7 +32,7 @@ std::string BLIFFile;
 
 void addPredecessors(std::vector<Node *> &m, Node *n);
 int max_delay(Node*, Node*, std::vector<Node*>);
-
+void lawler_cluster(Node*, std::vector<Cluster>&);
 int main(int argc, char **argv) {
     if (UNIX_RUN){
         BLIFFile = FILENAME;
@@ -110,7 +111,7 @@ int main(int argc, char **argv) {
     for(auto node : master){
         node->id = id++;
         //apply initial labeling (PI label = delay, non-PI label = 0)
-        if(!node->prev.empty()) node->label = 0;
+        if(!node->prev.empty()) node->label = 0; //todo: we could avoid this step if we just had nodes default to 0
         else node->label = node->delay;
     }
     auto labelInitialEnd = sc::high_resolution_clock::now();
@@ -169,41 +170,40 @@ int main(int argc, char **argv) {
     }
     auto delayMEnd = sc::high_resolution_clock::now();
 
-
-    // DEBUG
     /*
+    // DEBUG
     if(USE_DELAY_MATRIX) {
-        //std::cout << "DELAY MATRIX:" << std::endl;
+        std::cout << "DELAY MATRIX:" << std::endl;
         for (auto m : master) {
-            //std::cout << "\t" << m->strID;
+            std::cout << "\t" << m->strID;
         }
-        //std::cout << std::endl;
+        std::cout << std::endl;
         for (uint32_t i = 0; i < N; ++i) {
-            //std::cout << master.at(i)->strID;
+            std::cout << master.at(i)->strID;
             for (int j = 0; j < N; ++j) {
-                //std::cout << "\t" << delay_matrix[N * i + j];
+                std::cout << "\t" << delay_matrix[N * i + j];
             }
-            //std::cout << std::endl;
+            std::cout << std::endl;
         }
     }
     // check delay matrix against max_delay calculation (DEBUG)
     bool max_delay_consistent = true;
-    //std::cout << "MAX DELAY CALC RESULTS:" << std::endl;
+    std::cout << "MAX DELAY CALC RESULTS:" << std::endl;
     for (auto m : master){
-        //std::cout << "\t" << m->strID;
+        std::cout << "\t" << m->strID;
     }
     std::cout << std::endl;
     for(uint32_t i = 0; i < N; ++i){
-        //std::cout << master.at(i)->strID;
+        std::cout << master.at(i)->strID;
         for(uint32_t j=0; j < N; ++j){
             int m_d = max_delay(master.at(i),master.at(j),master);
-            //std::cout << "\t" << m_d;
+            std::cout << "\t" << m_d;
             if(USE_DELAY_MATRIX) {
                 if (m_d != delay_matrix[N * i + j]) max_delay_consistent = false;
             }
 
         }
-        //std::cout << std::endl;
+        std::cout << std::endl;
     }
     if(USE_DELAY_MATRIX) {
         if (max_delay_consistent) {
@@ -212,12 +212,16 @@ int main(int argc, char **argv) {
             std::cout << "max_delay function FAILED consistency check" << std::endl;
         }
     }
-    */
+     */
 
 
     std::cout << "Delay Matrix Calculation Complete" << std::endl;
 
    //////      CALCULATE LABELS    ///////
+    auto labelClusterStart = sc::high_resolution_clock::now();
+    std::vector<Cluster> clusters;
+    int maxIODelay = 0;
+    if(!USE_LAWLER_LABELING) {
 
     // Let Gv be the subgraph containing v and all its predecessors
         // label_v(x) for all x in Gv\{v}
@@ -229,65 +233,110 @@ int main(int argc, char **argv) {
         // label(v) = max(l1,l2)
 
 
-    //todo: consider optimizing this code by changing how and when the ordered set container is used
-    std::vector<Cluster> clusters;
-    int maxIODelay = 0;
+        //todo: consider optimizing this code by changing how and when the ordered set container is used
 
-    auto labelClusterStart = sc::high_resolution_clock::now();
-    for(auto v : master) {
+        for (auto v : master) {
 
-        std::vector<Node *> S;
+            std::vector<Node *> S;
 
-        //prepare to add all predecessors of v to Gv by first resetting the visited flag
-        for (auto n : master){
-            n->visited = false;
+            for (auto n = master.begin(); n != master.begin()+v->id; ++n){ //set all predecessors' visited flag so we can get predecessors
+                (*n)->visited = false;
+            }
+
+            //skip PIs (label(PI) = delay(pi) already implemented)
+            if (!v->prev.empty()) {
+                for (auto n : v->prev) {
+                    addPredecessors(S, n);
+                }
+            }
+
+            // calculate label_v(x)
+            for (auto x : S) {
+                if (USE_DELAY_MATRIX) {
+                    x->label_v = x->label + delay_matrix[N * x->id + v->id];
+                } else {
+                    x->label_v = x->label + max_delay(x, v, master);
+                }
+            }
+
+            // copy Gv to S, which forces ordering to occur
+            std::sort(S.begin(), S.end(), compare_lv);
+
+            Cluster cl(v->id);
+            cl.members.push_back(v);
+
+            // pop first element from S and add to c until max cluster size reached or S is empty
+            for (int i = 1; i < MAX_CLUSTER_SIZE; ++i) { //i starts at 1 to include initial element already in cluster
+                if (S.empty()) break;
+                cl.members.push_back(*S.begin());
+                S.erase(S.begin());
+            }
+
+            int L2 = 0;
+            if (!S.empty()) {
+
+                L2 = (*S.begin())->label_v + INTER_CLUSTER_DELAY;
+            }
+            int L1 = cl.calcL1Value();
+            //DEBUG
+            //std::cout << v->strID << "'s L1 value: " << L1 << std::endl;
+            //std::cout << v->strID << "'s L2 value: " << L2 << std::endl;
+
+
+            v->label = (L1 > L2) ? L1 : L2;
+            maxIODelay = (v->label > maxIODelay) ? v->label : maxIODelay;
+            generateInputSet(cl);
+            clusters.push_back(cl);
         }
+    }
+    else{
+        // LAWLER LABELING ALGORITHM
+        // For each PI node, label = 0 (already implemented above)
+        // For each non PI node v
+            // p = maximum label of predecessors
+            // Xp = set of predecessors with label p
+            // if |Xp| < MAX_CLUSTER_SIZE
+                // L(v) = p
+            // else
+                // L(v) = p+1
+        // nodes with the same label go in the same cluster
 
-        //skip PIs (label(PI) = delay(pi) already implemented)
-        if (!v->prev.empty()) {
-            for(auto n : v->prev){
-                addPredecessors(S, n);
+        for(auto v : master){ //traversing in topological order guarantees all predecessors of v will be labeled
+            if(!v->isPI){
+                int max = 0;
+                int count = 0;
+                for (auto n = master.begin(); n != master.begin()+v->id; ++n){ //set all predecessors' visited flag so we can get predecessors
+                    (*n)->visited = false;
+                }
+                std::vector<Node *> pre;
+                for(auto n : v->prev){
+                    addPredecessors(pre, n);
+                }
+                for(auto p : pre){
+                    if(p->label == max){ //keep a count of the number of predecessors with max label
+                        ++count;
+                    }
+                    else if(p->label > max){
+                        max = p->label;
+                        count = 1;
+                    }
+                }
+                if(count < MAX_CLUSTER_SIZE){
+                    v->label = max;
+                }
+                else{
+                    v->label = max+1;
+                }
             }
         }
-
-        // calculate label_v(x)
-        for(auto x : S){
-            if(USE_DELAY_MATRIX) {
-                x->label_v = x->label + delay_matrix[N * x->id + v->id];
+        for(auto PO : POs){
+            for(auto n : master){ //prepare for recursive clustering, set visited node to false so we only add each node once
+                n->visited = false;
             }
-            else{
-                x->label_v = x->label + max_delay(x,v,master);
-            }
+            lawler_cluster(PO, clusters);
         }
 
-        // copy Gv to S, which forces ordering to occur
-        std::sort(S.begin(),S.end(),compare_lv);
 
-        Cluster cl(v->id);
-        cl.members.push_back(v);
-
-        // pop first element from S and add to c until max cluster size reached or S is empty
-        for(int i=1; i<MAX_CLUSTER_SIZE; ++i) { //i starts at 1 to include initial element already in cluster
-            if(S.empty()) break;
-            cl.members.push_back(*S.begin());
-            S.erase(S.begin());
-        }
-
-        int L2 = 0;
-        if (!S.empty()){
-
-            L2 = (*S.begin())->label_v + INTER_CLUSTER_DELAY;
-        }
-        int L1 = cl.calcL1Value();
-        //DEBUG
-        //std::cout << v->strID << "'s L1 value: " << L1 << std::endl;
-        //std::cout << v->strID << "'s L2 value: " << L2 << std::endl;
-
-
-        v->label = (L1 > L2) ? L1 : L2;
-        maxIODelay = (v->label > maxIODelay) ? v->label: maxIODelay;
-        generateInputSet(cl);
-        clusters.push_back(cl);
     }
     auto labelClusterEnd = sc::high_resolution_clock::now();
 
@@ -340,7 +389,7 @@ int main(int argc, char **argv) {
     auto clusterPhaseEnd = sc::high_resolution_clock::now();
 
     //DEBUG
-    /*
+    ///*
     std::cout << "FINAL CLUSTER LIST: " << std::endl;
     for (auto c : finalClusterList){
         std::cout << "CLUSTER " << master.at(c->id)->strID << ": [";
@@ -349,7 +398,7 @@ int main(int argc, char **argv) {
         }
         std::cout << "]" << std::endl;
     }
-    */
+    //*/
 
 
     std::cout << "PROGRAM COMPLETE" << std::endl;
@@ -405,12 +454,12 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-//adds a node to master in topological order by first ensuring that all predecessors have been added to master
+//adds a node and its predecessors to vector in topological order
 void addPredecessors(std::vector<Node *> &m, Node *n){
     for(auto node : n->prev){
         if (!node->visited) addPredecessors(m, node);
     }
-    n->visited = true;
+    n->visited = true; //todo: remove the need for a visited flag by using a more efficient method
     m.push_back(n);
     //std::cout << "Adding " << n->strID  << " to master." << std::endl; //debug
 }
@@ -439,4 +488,28 @@ int max_delay(Node* src, Node* dst, std::vector<Node *> nodes){
     }
     if(delays[dst->id - offset] == -1) return 0; //if there was no path from src to dst, return 0
     return delays[dst->id - offset];
+}
+//similar to addPredecessors, but only adds the node if it has the specified label
+void get_lawler_cluster(std::vector<Node *> &nodes, Node* n, int p){
+    if(n->label == p){
+        for(auto prev : n->prev){
+            get_lawler_cluster(nodes, prev, p);
+        }
+        n->visited = true;
+        nodes.push_back(n);
+    }
+}
+void lawler_cluster(Node* n, std::vector<Cluster> &clusters){
+    if(!n->visited){
+        std::vector<Node*> clust;
+        get_lawler_cluster(clust, n, n->label);
+        Cluster newCluster(n->id);
+        for(auto c : clust){
+            newCluster.members.push_back(c);
+        }
+        clusters.push_back(newCluster);
+    }
+    for(auto p : n->prev){
+        lawler_cluster(p, clusters);
+    }
 }
