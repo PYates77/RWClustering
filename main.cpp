@@ -21,7 +21,7 @@ int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
 bool USE_DELAY_MATRIX = true;
 std::string FILENAME = "example_lecture.blif";
-bool USE_LAWLER_LABELING = false;
+bool USE_LAWLER_LABELING = true;
 #if (defined(LINUX) || defined(__linux__))
     bool UNIX_RUN = true;
 #else
@@ -398,8 +398,8 @@ int main(int argc, char **argv) {
         }
     }
     else{ //for lawler labeling, just insert clusters into final cluster list as they are
-        for(auto c : clusters){
-            finalClusterList.push_back(&c);
+        for(auto it = clusters.begin(); it != clusters.end(); ++it){
+            finalClusterList.push_back(&(*it));
         }
     }
     auto clusterPhaseEnd = sc::high_resolution_clock::now();
