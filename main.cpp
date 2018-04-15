@@ -14,7 +14,7 @@
 namespace sc = std::chrono;
 
 //TODO: USER PARAMETERS (SHOULD BE COMMAND LINE DRIVEN)
-int MAX_CLUSTER_SIZE = 12; //default value = 10
+int MAX_CLUSTER_SIZE = 4; //default value = 10
 int INTER_CLUSTER_DELAY = 4;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
@@ -30,9 +30,9 @@ bool USE_LAWLER_LABELING = true;
 
 std::string BLIFFile;
 
-void addPredecessors(std::vector<Node *> &m, Node *n);
+void addPredecessors(std::vector<Node *>&, Node*);
 int max_delay(Node*, Node*, std::vector<Node*>);
-void lawler_cluster(Node*, std::vector<Cluster>&);
+void lawler_cluster(std::vector<Node *>&, Node*, std::vector<Cluster>&);
 int main(int argc, char **argv) {
     if (UNIX_RUN){
         BLIFFile = FILENAME;
@@ -342,7 +342,7 @@ int main(int argc, char **argv) {
             n->visited = false;
         }
         for(auto PO : POs){
-            lawler_cluster(PO, clusters);
+            lawler_cluster(master, PO, clusters);
         }
 
 
@@ -507,26 +507,40 @@ int max_delay(Node* src, Node* dst, std::vector<Node *> nodes){
     return delays[dst->id - offset];
 }
 //similar to addPredecessors, but only adds the node if it has the specified label
-void get_lawler_cluster(std::vector<Node *> &nodes, Node* n, int p){
+void get_lawler_cluster(std::vector<Node *> &nodes, Node* n, int p, bool* visited){
+    if (visited[n->id]) return;
     if(n->label == p){
         for(auto prev : n->prev){
-            get_lawler_cluster(nodes, prev, p);
+            get_lawler_cluster(nodes, prev, p,visited);
         }
-        n->visited = true;
+        visited[n->id] = true;
         nodes.push_back(n);
     }
 }
-void lawler_cluster(Node* n, std::vector<Cluster> &clusters){
-    if(!n->visited){
-        std::vector<Node*> clust;
-        get_lawler_cluster(clust, n, n->label);
-        Cluster newCluster(n->id);
-        for(auto c : clust){
-            newCluster.members.push_back(c);
+void lawler_cluster(std::vector<Node*> &m, Node* n, std::vector<Cluster> &clusters){
+    if(!n->visited) {
+        bool cluster = true;
+        for (auto suc : n->next) { //for each of n's successors
+            if (n->label == suc->label) {
+                cluster = false;
+            }
         }
-        clusters.push_back(newCluster);
+        if (cluster) {
+            std::vector<Node *> clust;
+            bool visited[n->id+1];
+            for(int i=0; i<=n->id; ++i){
+                visited[i] = false;
+            }
+            get_lawler_cluster(clust, n, n->label,visited);
+            Cluster newCluster(n->id);
+            for (auto c : clust) {
+                newCluster.members.push_back(c);
+            }
+            clusters.push_back(newCluster);
+        }
     }
+    n->visited = true;
     for(auto p : n->prev){
-        lawler_cluster(p, clusters);
+        lawler_cluster(m,p, clusters);
     }
 }
