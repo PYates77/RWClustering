@@ -14,7 +14,7 @@
 namespace sc = std::chrono;
 
 //TODO: USER PARAMETERS (SHOULD BE COMMAND LINE DRIVEN)
-int MAX_CLUSTER_SIZE = 10; //default value = 10
+int MAX_CLUSTER_SIZE = 12; //default value = 10
 int INTER_CLUSTER_DELAY = 4;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
@@ -259,8 +259,17 @@ int main(int argc, char **argv) {
                 }
             }
 
-            // copy Gv to S, which forces ordering to occur
+            // sort S
             std::sort(S.begin(), S.end(), compare_lv);
+
+            //DEBUG
+            std::cout << "S for Node " << v->strID << " has." << std::endl;
+            for(auto s : S){
+                std::cout << s->strID << " ,";
+            }
+            std::cout << std::endl;
+
+
 
             Cluster cl(v->id);
             cl.members.push_back(v);
@@ -348,7 +357,7 @@ int main(int argc, char **argv) {
         std::cout << "LABEL FOR NODE " << m->strID << ": " << m->label << std::endl;
     }
     */
-    /*
+    ///*
     for(auto cluster : clusters){
         std::cout << "\nCluster " << cluster.id << "(" << master.at(cluster.id)->strID << ") has: " << std::endl;
         for(auto member : cluster.members){
@@ -361,7 +370,7 @@ int main(int argc, char **argv) {
         }
 
     }
-    */
+    //*/
     std::vector<Cluster *> finalClusterList;
     auto clusterPhaseStart = sc::high_resolution_clock::now();
     if(!USE_LAWLER_LABELING) { //for RW
@@ -463,6 +472,7 @@ int main(int argc, char **argv) {
 
 //adds a node and its predecessors to vector in topological order
 void addPredecessors(std::vector<Node *> &m, Node *n){
+    if(n->visited) return;
     for(auto node : n->prev){
         if (!node->visited) addPredecessors(m, node);
     }
