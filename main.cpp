@@ -329,10 +329,10 @@ int main(int argc, char **argv) {
                 }
             }
         }
+        for(auto n : master){ //prepare for recursive clustering, set visited node to false so we only add each node once
+            n->visited = false;
+        }
         for(auto PO : POs){
-            for(auto n : master){ //prepare for recursive clustering, set visited node to false so we only add each node once
-                n->visited = false;
-            }
             lawler_cluster(PO, clusters);
         }
 
@@ -362,28 +362,35 @@ int main(int argc, char **argv) {
 
     }
     */
-
-    //CLUSTERING PHASE
     std::vector<Cluster *> finalClusterList;
-    std::vector<Node *> L;
-
-    std::copy(POs.begin(),POs.end(),std::back_inserter(L)); //Generate L as the set of all POs in the circuit
-
     auto clusterPhaseStart = sc::high_resolution_clock::now();
-    while (!L.empty()){
-        //retrieve first element of L and pop from L
-        Node *lNode = *L.begin();
-        L.erase(L.begin());
+    if(!USE_LAWLER_LABELING) { //for RW
+        //CLUSTERING PHASE
+        std::vector<Node *> L;
 
-        //add cluster to finalClusterList
-        Cluster* cl = &(clusters.at(lNode->id));
-        finalClusterList.push_back(cl);
+        std::copy(POs.begin(), POs.end(), std::back_inserter(L)); //Generate L as the set of all POs in the circuit
 
-        //add any node in input(lNode's cluster) whose cluster is not in the finalClusterList
-        for (auto iNode : cl->inputSet){
-            if (!Cluster::isClusterInList(iNode->id,finalClusterList) && retrieveNodeByStr_ptr(iNode->strID,L) == nullptr){
-                L.push_back(iNode);
+        while (!L.empty()) {
+            //retrieve first element of L and pop from L
+            Node *lNode = *L.begin();
+            L.erase(L.begin());
+
+            //add cluster to finalClusterList
+            Cluster *cl = &(clusters.at(lNode->id));
+            finalClusterList.push_back(cl);
+
+            //add any node in input(lNode's cluster) whose cluster is not in the finalClusterList
+            for (auto iNode : cl->inputSet) {
+                if (!Cluster::isClusterInList(iNode->id, finalClusterList) &&
+                    retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
+                    L.push_back(iNode);
+                }
             }
+        }
+    }
+    else{ //for lawler labeling, just insert clusters into final cluster list as they are
+        for(auto c : clusters){
+            finalClusterList.push_back(&c);
         }
     }
     auto clusterPhaseEnd = sc::high_resolution_clock::now();
