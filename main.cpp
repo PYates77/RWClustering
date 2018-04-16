@@ -14,8 +14,8 @@
 namespace sc = std::chrono;
 
 //TODO: USER PARAMETERS (SHOULD BE COMMAND LINE DRIVEN)
-int MAX_CLUSTER_SIZE = 8; //default value = 10
-int INTER_CLUSTER_DELAY = 4;
+int MAX_CLUSTER_SIZE = 8; //default value = 8
+int INTER_CLUSTER_DELAY = 3;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
@@ -343,18 +343,20 @@ int main(int argc, char **argv) {
                 S.erase(S.begin());
             }
 
-            int L2 = 0;
-            if (!S.empty()) {
+            if (!v->prev.empty()) {
+                int L2 = 0;
+                if (!S.empty()) {
 
-                L2 = (*S.begin())->label_v + INTER_CLUSTER_DELAY;
+                    L2 = (*S.begin())->label_v + INTER_CLUSTER_DELAY;
+                }
+                int L1 = cl.calcL1Value();
+                //DEBUG
+                //std::cout << v->strID << "'s L1 value: " << L1 << std::endl;
+                //std::cout << v->strID << "'s L2 value: " << L2 << std::endl;
+
+
+                v->label = (L1 > L2) ? L1 : L2;
             }
-            int L1 = cl.calcL1Value();
-            //DEBUG
-            //std::cout << v->strID << "'s L1 value: " << L1 << std::endl;
-            //std::cout << v->strID << "'s L2 value: " << L2 << std::endl;
-
-
-            v->label = (L1 > L2) ? L1 : L2;
             maxIODelay = (v->label > maxIODelay) ? v->label : maxIODelay;
             generateInputSet(cl);
             clusters.push_back(cl);
