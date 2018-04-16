@@ -13,7 +13,6 @@
 
 namespace sc = std::chrono;
 
-//TODO: USER PARAMETERS (SHOULD BE COMMAND LINE DRIVEN)
 int MAX_CLUSTER_SIZE = 8; //default value = 8
 int INTER_CLUSTER_DELAY = 3;
 int PRIMARY_INPUT_DELAY = 0;
@@ -41,18 +40,18 @@ int main(int argc, char **argv) {
         BLIFFile = "../" + FILENAME;
     }
 
-    //parse arguments todo: decide on command line option format (use getopt_long for long form arguments)
+    //parse arguments
     int HELP_FLAG = 0;
     const struct option longopts[] =
     {
         {"lawler", no_argument,     &USE_LAWLER_LABELING, 1},
         {"delay_matrix", no_argument, &USE_DELAY_MATRIX, 1},
         {"help", no_argument, &HELP_FLAG, 1},
-        {"max_cluster_size", required_argument, 0, 's'},
-        {"pi_delay", required_argument, 0, 'i'},
-        {"po_delay", required_argument, 0, 'o'},
-        {"node_delay", required_argument, 0, 'n'},
-        {"intercluster_delay", required_argument, 0, 'c'},
+        {"max_cluster_size", required_argument, nullptr, 's'},
+        {"pi_delay", required_argument, nullptr, 'i'},
+        {"po_delay", required_argument, nullptr, 'o'},
+        {"node_delay", required_argument, nullptr, 'n'},
+        {"intercluster_delay", required_argument, nullptr, 'c'},
         {0,0,0,0}
     };
     int flag;
@@ -82,7 +81,7 @@ int main(int argc, char **argv) {
                 return 0;
                 break;
             default:
-                std::cout << "Encountered error with commandline arguments" << std::endl;
+                std::cout << "Encountered error with command line arguments" << std::endl;
                 abort();
         }
     }
@@ -138,7 +137,6 @@ int main(int argc, char **argv) {
     std::cout << "]" << std::endl;
      */
 
-    //todo: interpret command-line arguments for input file and cluster size limit
     // REQUIREMENT: All arrays containing node objects MUST point to rawNodeList. No copies of Nodes may be made at any time.
     std::vector<Node *> PIs = obtainPINodes(rawNodeList);
     std::vector<Node *> POs = obtainPONodes(rawNodeList);
@@ -171,8 +169,7 @@ int main(int argc, char **argv) {
     for(auto node : master){
         node->id = id++;
         //apply initial labeling (PI label = delay, non-PI label = 0)
-        if(!node->prev.empty()) node->label = 0; //todo: we could avoid this step if we just had nodes default to 0
-        else node->label = node->delay;
+        node->label = node->delay;
     }
     auto labelInitialEnd = sc::high_resolution_clock::now();
 
@@ -483,7 +480,6 @@ int main(int argc, char **argv) {
 
 
     std::cout << "PROGRAM COMPLETE" << std::endl;
-    //todo: output to file and possibly GUI
 
     //STATISTICS
 
