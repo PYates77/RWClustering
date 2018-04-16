@@ -5,23 +5,23 @@
 
 
 #include <set>
-#include <unistd.h>
 #include "Node.h"
 #include "Cluster.h"
 #include "common.h"
 #include <algorithm>
+#include <getopt.h>
 
 namespace sc = std::chrono;
 
 //TODO: USER PARAMETERS (SHOULD BE COMMAND LINE DRIVEN)
-int MAX_CLUSTER_SIZE = 4; //default value = 10
+int MAX_CLUSTER_SIZE = 8; //default value = 10
 int INTER_CLUSTER_DELAY = 4;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
-bool USE_DELAY_MATRIX = true;
+int USE_DELAY_MATRIX = true;
 std::string FILENAME = "example_lecture.blif";
-bool USE_LAWLER_LABELING = true;
+int USE_LAWLER_LABELING = true;
 #if (defined(LINUX) || defined(__linux__))
     bool UNIX_RUN = true;
 #else
@@ -42,25 +42,66 @@ int main(int argc, char **argv) {
     }
 
     //parse arguments todo: decide on command line option format (use getopt_long for long form arguments)
+    const struct option longopts[] =
+    {
+        {"lawler", no_argument,     &USE_LAWLER_LABELING, 1},
+        {"delay_matrix", no_argument, &USE_DELAY_MATRIX, 1},
+        {"max_cluster_size", required_argument, 0, 's'},
+        {"pi_delay", required_argument, 0, 'i'},
+        {"po_delay", required_argument, 0, 'o'},
+        {"node_delay", required_argument, 0, 'n'},
+        {"intercluster_delay", required_argument, 0, 'c'},
+        {0,0,0,0}
+    };
     int flag;
-    while((flag = getopt(argc, argv, "s:")) != -1){
+    int option_index;
+    while(1){
+        flag = getopt_long(argc, argv, "s:i:o:n:c:", longopts, &option_index);
+        if(flag == -1) break;
         switch(flag){
+            case 0:
+                break;
             case 's':
                 MAX_CLUSTER_SIZE = std::atoi(optarg);
                 break;
+            case 'i':
+                PRIMARY_INPUT_DELAY = std::atoi(optarg);
+                break;
+            case 'o':
+                PRIMARY_OUTPUT_DELAY = std::atoi(optarg);
+                break;
+            case 'n':
+                NODE_DELAY = std::atoi(optarg);
+                break;
+            case 'c':
+                INTER_CLUSTER_DELAY = std::atoi(optarg);
+                break;
+            case '?':
+                break;
             default:
+                std::cout << "Encountered error with commandline arguments" << std::endl;
                 abort();
         }
     }
-
-    /*
+    if (optind < argc) {
+        FILENAME = argv[optind];
+    }
+    ///*
     std::cout << "RWClustering Application" << "\nAuthors: Akshay Nagendra <akshaynag@gatech.edu>, Paul Yates <pyates6@gatech.edu>" << std::endl;
     std::cout << "------------------------------------" << std::endl;
+    std::cout << "Input File: " << FILENAME.c_str() << std::endl;
     std::cout << "Max Cluster Size = " << MAX_CLUSTER_SIZE << std::endl;
-    std::cout << "Inter Cluster Delay = " << INTER_CLUSTER_DELAY << std::endl;
     std::cout << "PI Node Delay = " << PRIMARY_INPUT_DELAY << std::endl;
-    std::cout << "Normal Node/PO Node Delay = " << 1 << std::endl;
-     */
+    std::cout << "PO Node Delay = " << PRIMARY_OUTPUT_DELAY << std::endl;
+    std::cout << "Normal Node Node Delay = " << NODE_DELAY << std::endl;
+    std::cout << "Inter Cluster Delay = " << INTER_CLUSTER_DELAY << std::endl;
+    if(USE_LAWLER_LABELING){
+        std::cout << "Using Lawlwer Labeling" << std::endl;
+    }
+    if(USE_DELAY_MATRIX) {
+        std::cout << "Using Delay Matrix" << std::endl;
+    }
+    //*/
     std::vector<Node> rawNodeList;
 
     auto parsestart = sc::high_resolution_clock::now();

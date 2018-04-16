@@ -337,7 +337,7 @@ void writeOutputFiles(std::string circuitName,
                       int& cmdPiDelay,
                       int& cmdPoDelay,
                       int& cmdNodeDelay,
-                      bool& cmdUseLawlerLabeling)
+                      int& cmdUseLawlerLabeling)
 {
     //Description: function for writing to the output files for the application
     bool tooLargeForTable = cmdMaxClusterSize > CLUSTER_SIZE_LIMIT;
