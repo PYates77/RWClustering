@@ -19,6 +19,7 @@ struct Cluster {
     Cluster(int);
     std::vector<Node *> inputSet;
     bool static isClusterInList(int cID,std::vector<Cluster*>& cList);
+    bool static isClusterInList_str(std::string sID,std::vector<Cluster*>& cList);
     //TODO: need lists of input/output Nodes? Clusters?
 };
 

@@ -31,3 +31,14 @@ bool Cluster::isClusterInList(int cID,std::vector<Cluster*>& cList){
     }
     return false;
 }
+
+bool Cluster::isClusterInList_str(std::string sID,std::vector<Cluster*>& cList){
+    for (auto c: cList){
+        for (auto cMem : c->members){
+            if (cMem->strID == sID){
+                return true;
+            }
+        }
+    }
+    return false;
+}

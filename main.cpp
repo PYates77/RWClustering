@@ -263,11 +263,13 @@ int main(int argc, char **argv) {
             std::sort(S.begin(), S.end(), compare_lv);
 
             //DEBUG
+            /*
             std::cout << "S for Node " << v->strID << " has." << std::endl;
             for(auto s : S){
                 std::cout << s->strID << " ,";
             }
             std::cout << std::endl;
+            */
 
 
 
@@ -336,6 +338,7 @@ int main(int argc, char **argv) {
                 else{
                     v->label = max+1;
                 }
+                maxIODelay = (v->label > maxIODelay) ? v->label : maxIODelay;
             }
         }
         for(auto n : master){ //prepare for recursive clustering, set visited node to false so we only add each node once
@@ -357,7 +360,7 @@ int main(int argc, char **argv) {
         std::cout << "LABEL FOR NODE " << m->strID << ": " << m->label << std::endl;
     }
     */
-    ///*
+    /*
     for(auto cluster : clusters){
         std::cout << "\nCluster " << cluster.id << "(" << master.at(cluster.id)->strID << ") has: " << std::endl;
         for(auto member : cluster.members){
@@ -370,7 +373,7 @@ int main(int argc, char **argv) {
         }
 
     }
-    //*/
+    */
     std::vector<Cluster *> finalClusterList;
     auto clusterPhaseStart = sc::high_resolution_clock::now();
     if(!USE_LAWLER_LABELING) { //for RW
@@ -405,7 +408,7 @@ int main(int argc, char **argv) {
     auto clusterPhaseEnd = sc::high_resolution_clock::now();
 
     //DEBUG
-    ///*
+    /*
     std::cout << "FINAL CLUSTER LIST: " << std::endl;
     for (auto c : finalClusterList){
         std::cout << "CLUSTER " << master.at(c->id)->strID << ": [";
@@ -414,7 +417,7 @@ int main(int argc, char **argv) {
         }
         std::cout << "]" << std::endl;
     }
-    //*/
+    */
 
 
     std::cout << "PROGRAM COMPLETE" << std::endl;
@@ -425,10 +428,16 @@ int main(int argc, char **argv) {
     //print to files
     writeOutputFiles(BLIFFile.substr(0,BLIFFile.length()-5),
                      master,clusters,finalClusterList,
-                     MAX_CLUSTER_SIZE,INTER_CLUSTER_DELAY,PRIMARY_INPUT_DELAY,PRIMARY_OUTPUT_DELAY,NODE_DELAY);
+                     MAX_CLUSTER_SIZE,INTER_CLUSTER_DELAY,PRIMARY_INPUT_DELAY,PRIMARY_OUTPUT_DELAY,NODE_DELAY,
+                     USE_LAWLER_LABELING);
 
     std::ofstream verboseFile;
-    verboseFile.open("output_" + BLIFFile.substr(0,BLIFFile.length()-5) + "_verbose.txt",std::fstream::app);
+    if (!USE_LAWLER_LABELING) {
+        verboseFile.open("output_" + BLIFFile.substr(0, BLIFFile.length() - 5) + "_verbose.txt", std::fstream::app);
+    }
+    else {
+        verboseFile.open("output_" + BLIFFile.substr(0, BLIFFile.length() - 5) + "_verbose_lawler.txt", std::fstream::app);
+    }
 
     std::vector<std::pair<long long int,std::string>> execTimes;
     std::vector<std::string> execStrs = {"PARSING AND POPULATION OF ALL NODES",

@@ -336,7 +336,8 @@ void writeOutputFiles(std::string circuitName,
                       int& cmdInterClusterDelay,
                       int& cmdPiDelay,
                       int& cmdPoDelay,
-                      int& cmdNodeDelay)
+                      int& cmdNodeDelay,
+                      bool& cmdUseLawlerLabeling)
 {
     //Description: function for writing to the output files for the application
     bool tooLargeForTable = cmdMaxClusterSize > CLUSTER_SIZE_LIMIT;
@@ -344,53 +345,68 @@ void writeOutputFiles(std::string circuitName,
     std::ofstream verboseResult;
     std::ofstream clustrTable;
 
-    resultTable.open("output_" + circuitName + "_table.csv");
-    verboseResult.open("output_" + circuitName + "_verbose.txt");
-    clustrTable.open("output_" + circuitName + "_cluster.csv");
+    if (!cmdUseLawlerLabeling) {
+        resultTable.open("output_" + circuitName + "_table.csv");
+        verboseResult.open("output_" + circuitName + "_verbose.txt");
+        clustrTable.open("output_" + circuitName + "_cluster.csv");
+    }
+    else {
+        resultTable.open("output_" + circuitName + "_table_lawler.csv");
+        verboseResult.open("output_" + circuitName + "_verbose_lawler.txt");
+        clustrTable.open("output_" + circuitName + "_cluster_lawler.csv");
+    }
 
-    if (tooLargeForTable){ resultTable << "NODE,PI?,PO?,NODE DELAY,NODE LABEL,CLUSTER SIZE" << std::endl; }
+    if (cmdUseLawlerLabeling) { resultTable << "NODE,PI?,PO?,NODE DELAY,NODE LABEL" << std::endl; }
+    else if (tooLargeForTable){ resultTable << "NODE,PI?,PO?,NODE DELAY,NODE LABEL,CLUSTER SIZE" << std::endl; }
     else { resultTable << "NODE,PI?,PO?,NODE DELAY,NODE LABEL,CLUSTER SIZE,CLUSTER CONTENTS" << std::endl; }
 
-    verboseResult << "Rajaraman-Wong Clustering Application\nAkshay Nagendra <akshaynag@gatech.edu>, Paul Yates <paul.maxyat@gatech.edu>" << std::endl;
+    verboseResult << "Rajaraman-Wong/Lawler Clustering Application\nAkshay Nagendra <akshaynag@gatech.edu>, Paul Yates <paul.maxyat@gatech.edu>" << std::endl;
     verboseResult << "\n----------COMMAND LINE PARAMETERS----------\n" << std::endl;
     verboseResult << "Input Netlist: " << circuitName << ".blif" << std::endl;
     verboseResult << "Max Cluster Size: " << cmdMaxClusterSize << std::endl;
     verboseResult << "Inter Cluster Delay: " << cmdInterClusterDelay << std::endl;
     verboseResult << "Primary Input Delay: " << cmdPiDelay << std::endl;
     verboseResult << "Primary Output Delay: " << cmdPoDelay << std::endl;
-    verboseResult << "Node Delay: " << cmdNodeDelay << "\n" << std::endl;
+    verboseResult << "Node Delay: " << cmdNodeDelay << std::endl;
+    if (!cmdUseLawlerLabeling){
+        verboseResult << "RUN MODE: RW CLUSTERING\n" << std::endl;
+    }
+    else {
+        verboseResult << "RUN MODE: LAWLER\n" << std::endl;
+    }
     verboseResult << "----------NODE INFORMATION----------\n" << std::endl;
 
-    for (int i=0; i < topoNodeList.size(); ++i){
+    for (int i=0; i < topoNodeList.size(); ++i) {
         resultTable << topoNodeList.at(i)->strID << ",";
         verboseResult << "NODE " << topoNodeList.at(i)->strID << ":" << std::endl;
-        std::string pi = (topoNodeList.at(i)->isPI) ?  "Y" : "N";
-        std::string po = (topoNodeList.at(i)->isPO) ?  "Y" : "N";
+        std::string pi = (topoNodeList.at(i)->isPI) ? "Y" : "N";
+        std::string po = (topoNodeList.at(i)->isPO) ? "Y" : "N";
         resultTable << pi << "," << po << ",";
         verboseResult << "\tPI?: " << pi << "\n\tPO?: " << po << std::endl;
         resultTable << topoNodeList.at(i)->delay << ",";
         verboseResult << "\tDELAY: " << topoNodeList.at(i)->delay << std::endl;
         resultTable << topoNodeList.at(i)->label << ",";
         verboseResult << "\tLABEL: " << topoNodeList.at(i)->label << std::endl;
-        resultTable << clList.at(i).members.size();
-        if (!tooLargeForTable){
-            resultTable << ",";
-        }
-        verboseResult << "\tCLUSTER SIZE: " << clList.at(i).members.size() << std::endl;
+        if (!cmdUseLawlerLabeling) {
+            resultTable << clList.at(i).members.size();
+            if (!tooLargeForTable) {
+                resultTable << ",";
+            }
+            verboseResult << "\tCLUSTER SIZE: " << clList.at(i).members.size() << std::endl;
 
-        verboseResult << "\tCLUSTER MEMBERS: ";
-        int count = 0;
-        for (auto clMem : clList.at(i).members) {
-            if(!tooLargeForTable){
-                resultTable << clMem->strID << " ";
+            verboseResult << "\tCLUSTER MEMBERS: ";
+            int count = 0;
+            for (auto clMem : clList.at(i).members) {
+                if (!tooLargeForTable) {
+                    resultTable << clMem->strID << " ";
+                }
+                if (count == clList.at(i).members.size() - 1) {
+                    verboseResult << clMem->strID;
+                } else {
+                    verboseResult << clMem->strID << ", ";
+                }
+                count += 1;
             }
-            if (count == clList.at(i).members.size()-1){
-                verboseResult << clMem->strID;
-            }
-            else {
-                verboseResult << clMem->strID << ", ";
-            }
-            count += 1;
         }
         verboseResult << std::endl;
         resultTable << std::endl;
