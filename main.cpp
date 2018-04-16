@@ -14,8 +14,8 @@
 namespace sc = std::chrono;
 
 //TODO: USER PARAMETERS (SHOULD BE COMMAND LINE DRIVEN)
-int MAX_CLUSTER_SIZE = 8; //default value = 10
-int INTER_CLUSTER_DELAY = 4;
+int MAX_CLUSTER_SIZE = 8; //default value = 8
+int INTER_CLUSTER_DELAY = 3;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
