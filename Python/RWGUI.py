@@ -14,7 +14,6 @@ import sys
 
 #PARAMETERS THAT CAN BE CONFIGURED BY USER
 INPUT_GRAPH_FILENAME = "input_graph_lecture.dmp" #DEFAULT FILE
-DELAY = 1
 CURSOR_SIZE = 50
 GLOBAL_SKEW_X = 1.5*CURSOR_SIZE
 GLOBAL_SKEW_Y = CURSOR_SIZE
@@ -38,12 +37,15 @@ NUM_CONSOLE_BUTTONS = 3
 CONSOLE_WIDTH = CANVAS_DISPLAY_W + SCROLLBAR_WIDTH
 CONSOLE_BUTTON_HEIGHT = WINDOW_HEIGHT - (CANVAS_DISPLAY_H + SCROLLBAR_WIDTH)
 LABEL_WIDTH = int(1.25*FONT_SIZE)
-NUM_COLUMNS_TABLE = 5
-COLUMN_HEADERS = ["NODE","NODE DELAY","PI?","LABEL","CLUSTER"]
-
-
+COLUMN_HEADERS = ["NODE","SIGNAL NAME","NODE DELAY","LABEL","CLUSTER"]
+NUM_COLUMNS_TABLE = len(COLUMN_HEADERS)
+TABLE_ELEMENTS = []
 TABLE_WIDTH = WINDOW_WIDTH - (CANVAS_DISPLAY_W + SCROLLBAR_WIDTH)
+LSET = []
+LSET_FONT = FONT_SIZE + 4
 
+
+#GUI setup
 root = tkinter.Tk()
 root.title("RW Clustering GUI")
 root.geometry(WINDOW_DIM)
@@ -87,6 +89,7 @@ class Node:
         self.prevn = []
         self.nextn = []
         self.nodeID = -1
+        self.delay = 1
         self.circuitNets = []
         self.X = -1
         self.Y = -1
@@ -99,6 +102,7 @@ class Node:
         print "Successors: ", self.nextn
         print "Cluster(", self.nodeID, "): ", self.cluster
         print "Label: ", self.label
+        print "Delay: ", self.delay
         if self.X != -1 and self.Y != -1:
             print "X: ",self.X
             print "Y: ",self.Y
@@ -238,7 +242,7 @@ def displayTable(frameTable,nList):
     #Populate table of information
     for i in range(len(nList)+1): #Rows
         for j in range(NUM_COLUMNS_TABLE): #Columns
-            b = tkinter.Label(frameTable, relief=tkinter.RAISED, width=LABEL_WIDTH)
+            b = tkinter.Label(frameTable,relief=tkinter.RAISED)
             msg = ""
             fontStyle = ""
             if not i:
@@ -248,12 +252,9 @@ def displayTable(frameTable,nList):
                 if j == 0:
                     msg = nList[i-1].nodeID
                 if j == 1:
-                    msg = DELAY
+                    msg = nList[i - 1].circuitNet
                 if j == 2:
-                    if not nList[i-1].prevn:
-                        msg = "Y"
-                    else:
-                        msg = "N"
+                    msg = nList[i-1].delay
                 if j == 3:
                     msg = nList[i-1].label
                 if j == 4:
@@ -264,7 +265,14 @@ def displayTable(frameTable,nList):
                 fontStyle = "normal"
             b.config(font=("Times New Roman", FONT_SIZE, fontStyle))
             b.config(text=msg)
-            b.grid(row=i, column=j)
+            b.grid(row=i, column=j,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+            TABLE_ELEMENTS.append(b)
+    lsetTitle = tkinter.Label(frameTable,relief=tkinter.RAISED,text="CURRENT L SET",font=("Times New Roman", LSET_FONT, "bold"))
+    lsetTitle.grid(row=len(nList)+1,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+    lsetLabel = tkinter.Label(frameTable, relief=tkinter.RAISED,text=LSET,font=("Times New Roman", LSET_FONT, "normal"))
+    lsetLabel.grid(row=len(nList)+2,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+    return lsetLabel
+
     
 def DAGPLACER(srcNList,nList):
     count = 0
@@ -320,26 +328,29 @@ for line in graphFile:
     sO = re.search( r'//(.*)', line)
     if sO:
         FLAG = sO.group(1)
+        continue
     if (FLAG == "NODES"):
-        sO2 = re.search(r'(.*):(.*);(.*);(.*);(.*);(.*)',line)
+        sO2 = re.search(r'(.*):(.*);(\d+);(.*);(.*);(.*);(.*)',line)
         if sO2:
             newNode = Node()
-            newNode.nodeID = sO2.group(1)
-            newNode.circuitNets = sO2.group(2).split()
-            newNode.prevn = sO2.group(3).split()
-            newNode.nextn = sO2.group(4).split()
-            newNode.label = sO2.group(5).split()
-            newNode.cluster = sO2.group(6).split()
+            newNode.nodeID = sO2.group(1).strip()
+            newNode.circuitNet = sO2.group(2).strip()
+            newNode.delay = sO2.group(3).strip()
+            newNode.prevn = sO2.group(4).split()
+            newNode.nextn = sO2.group(5).split()
+            newNode.label = sO2.group(6).split()
+            newNode.cluster = sO2.group(7).split()
+            newNode.cluster.sort()
             nodeList.append(newNode)
-    if (FLAG == "DELAY"):
-        DELAY = line
-        
+    if (FLAG == "CLUSTERS"):
+    	sO3 = re.search(r'^(.*):(.*);LSET:(.*)$',line)
+
 sourceNodeList = []	
 for n in nodeList:
     if not n.prevn:
         sourceNodeList.append(n)
 
-displayTable(tableFrame,nodeList)
+LSET_LABEL = displayTable(tableFrame,nodeList)
 
 start = time.time()
 
@@ -355,6 +366,7 @@ prevButton = tkinter.Button(root,text="PREV",command=prevCallback)
 prevButton.place(x=CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width = CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
 
 
+#cv.create_oval(0,0,100,100)
 
 
 #drawDAG(p,nodeList,edgeList)
