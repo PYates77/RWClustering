@@ -19,9 +19,9 @@ int INTER_CLUSTER_DELAY = 4;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
-int USE_DELAY_MATRIX = true;
+int USE_DELAY_MATRIX = false;
 std::string FILENAME = "example_lecture.blif";
-int USE_LAWLER_LABELING = true;
+int USE_LAWLER_LABELING = false;
 #if (defined(LINUX) || defined(__linux__))
     bool UNIX_RUN = true;
 #else
@@ -42,10 +42,12 @@ int main(int argc, char **argv) {
     }
 
     //parse arguments todo: decide on command line option format (use getopt_long for long form arguments)
+    int HELP_FLAG = 0;
     const struct option longopts[] =
     {
         {"lawler", no_argument,     &USE_LAWLER_LABELING, 1},
         {"delay_matrix", no_argument, &USE_DELAY_MATRIX, 1},
+        {"help", no_argument, &HELP_FLAG, 1},
         {"max_cluster_size", required_argument, 0, 's'},
         {"pi_delay", required_argument, 0, 'i'},
         {"po_delay", required_argument, 0, 'o'},
@@ -77,6 +79,7 @@ int main(int argc, char **argv) {
                 INTER_CLUSTER_DELAY = std::atoi(optarg);
                 break;
             case '?':
+                return 0;
                 break;
             default:
                 std::cout << "Encountered error with commandline arguments" << std::endl;
@@ -86,6 +89,22 @@ int main(int argc, char **argv) {
     if (optind < argc) {
         FILENAME = argv[optind];
     }
+    if (HELP_FLAG) {
+        std::cout << "Usage: rw [arguments] [inputFile.blif]" << std::endl;
+        std::cout << "Arguments:" << std::endl;
+        std::cout << "--help\t\t\tDisplay this helptext" << std::endl;
+        std::cout << "--lawler\t\tUse Lawler labeling algorithm instead of RW" << std::endl;
+        std::cout << "--delay_matrix\t\tUse a delay matrix, (pays a memory penalty at a small runtime benefit)" << std::endl;
+        std::cout << "-s --max_cluster_size\tSet max cluster size (default 8)" << std::endl;
+        std::cout << "-i --pi_delay\t\tSet delay for all primary input nodes (default 0)" << std::endl;
+        std::cout << "-o --po_delay\t\tSet delay for all primary output nodes (default 1)" << std::endl;
+        std::cout << "-n --node_delay\t\tSet delay for all non-pi and non-po nodes (default 1)" << std::endl;
+        std::cout << "-c --intercluster_delay\tSet intercluster delay (default 3)" << std::endl;
+
+        return 0;
+    }
+
+
     ///*
     std::cout << "RWClustering Application" << "\nAuthors: Akshay Nagendra <akshaynag@gatech.edu>, Paul Yates <pyates6@gatech.edu>" << std::endl;
     std::cout << "------------------------------------" << std::endl;
