@@ -525,7 +525,7 @@ int main(int argc, char **argv) {
     writeOutputFiles(BLIFFile.substr(0,BLIFFile.length()-5),
                      master,clusters,finalClusterList,
                      MAX_CLUSTER_SIZE,INTER_CLUSTER_DELAY,PRIMARY_INPUT_DELAY,PRIMARY_OUTPUT_DELAY,NODE_DELAY,
-                     USE_LAWLER_LABELING);
+                     USE_LAWLER_LABELING,USE_GUI,USE_EXP);
     if (USE_GUI) {
         writeGUIFile(master, clusters, finalClusterList, L_HISTORY, maxIODelay, UNIX_RUN);
     }

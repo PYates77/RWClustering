@@ -337,7 +337,9 @@ void writeOutputFiles(std::string circuitName,
                       int& cmdPiDelay,
                       int& cmdPoDelay,
                       int& cmdNodeDelay,
-                      int& cmdUseLawlerLabeling)
+                      int& cmdUseLawlerLabeling,
+                      int& cmdUseGui,
+                      int& cmdUseExp)
 {
     //Description: function for writing to the output files for the application
     bool tooLargeForTable = cmdMaxClusterSize > CLUSTER_SIZE_LIMIT;
@@ -373,6 +375,18 @@ void writeOutputFiles(std::string circuitName,
     }
     else {
         verboseResult << "RUN MODE: LAWLER\n" << std::endl;
+    }
+    if (!cmdUseGui){
+        verboseResult << "GUI MODE: ENABLED" << std::endl;
+    }
+    else {
+        verboseResult << "GUI MODE: DISABLED" << std::endl;
+    }
+    if (!cmdUseExp){
+        verboseResult << "NON-OVERLAP MODE: ENABLED" << std::endl;
+    }
+    else {
+        verboseResult << "NON-OVERLAP MODE: DISABLED" << std::endl;
     }
     verboseResult << "----------NODE INFORMATION----------\n" << std::endl;
 
