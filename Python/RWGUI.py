@@ -27,7 +27,7 @@ WINDOW_DIM = str(WINDOW_WIDTH) + "x" + str(WINDOW_HEIGHT)
 SCREEN_WIDTH = 2000
 SCREEN_HEIGHT = 2000
 TEXT_BUFFER = 10
-FONT_SIZE = 16
+FONT_SIZE = 16  #use 12 or 14 for non-Xterm runs!
 SBUFFER = 20
 EBUFFER = 40
 Y_STEP = 2.5*CURSOR_SIZE
@@ -38,11 +38,21 @@ CONSOLE_WIDTH = CANVAS_DISPLAY_W + SCROLLBAR_WIDTH
 CONSOLE_BUTTON_HEIGHT = WINDOW_HEIGHT - (CANVAS_DISPLAY_H + SCROLLBAR_WIDTH)
 LABEL_WIDTH = int(1.25*FONT_SIZE)
 COLUMN_HEADERS = ["NODE","SIGNAL NAME","NODE DELAY","LABEL","CLUSTER"]
+CLUSTER_COLUMN_HEADERS = ["ROOT","ROOT NAME","CLUSTER SIZE","MEMBERS"]
 NUM_COLUMNS_TABLE = len(COLUMN_HEADERS)
+NUM_CLUSTER_COLUMN_HEADERS = len(CLUSTER_COLUMN_HEADERS)
 TABLE_ELEMENTS = []
+CLUSTER_TABLE_ELEMENTS = []
 TABLE_WIDTH = WINDOW_WIDTH - (CANVAS_DISPLAY_W + SCROLLBAR_WIDTH)
+
+#CLUSTERING DATA
 LSET = []
 LSET_FONT = FONT_SIZE + 4
+CURRENT_CLUSTER_INDEX = -1
+LSET_LABEL = 0
+LSET_INDEX = 0
+CLUSTERS_DRAWN = []
+
 
 
 #GUI setup
@@ -62,7 +72,6 @@ cv.place(x = 0, y = 0, width = CANVAS_DISPLAY_W, height = CANVAS_DISPLAY_H)
 tableFrame = tkinter.Frame(root)
 tableFrame.place(x = CANVAS_DISPLAY_W + SCROLLBAR_WIDTH, y = 0, width = TABLE_WIDTH, height = WINDOW_HEIGHT)
 
-
 v.config(command = cv.yview)
 h.config(command = cv.xview)
 cv.config(scrollregion=cv.bbox(tkinter.ALL))
@@ -72,8 +81,8 @@ p = turtle.RawTurtle(cv)
 pScreen = p.getscreen()
 p.speed(0)
 pScreen.register_shape("Circle.gif")
+pScreen.register_shape("Cluster.gif")
 pScreen.screensize(SCREEN_WIDTH,SCREEN_HEIGHT)
-p.shape("Circle.gif")
 
 LEFT_X = -(CANVAS_WIDTH/2)+CURSOR_SIZE
 RIGHT_X = (CANVAS_WIDTH/2)-CURSOR_SIZE
@@ -90,11 +99,12 @@ class Node:
         self.nextn = []
         self.nodeID = -1
         self.delay = 1
-        self.circuitNets = []
+        self.circuitNet = ""
         self.X = -1
         self.Y = -1
         self.cluster = []
         self.label = 0
+        self.members = []
     def printNodeInfo(self):
         print "NODE ", self.nodeID
         print "Nets Contained: ", self.circuitNets
@@ -209,7 +219,7 @@ def nodePlacement(srcNodeList,nodeMasterList):
             nodesPlaced.append(toBePlaced[i])
 
 	
-    return nodesPlaced
+    #return nodesPlaced
 	
 def drawNodes(cursor,nList):
     """Helper function to draw the nodes onto the screen"""
@@ -238,11 +248,11 @@ def verifyPlacement(nList,eList):
                 return True
     return False
 
-def displayTable(frameTable,nList):
+def displayTable(frameTable,nList,cList):
     #Populate table of information
     for i in range(len(nList)+1): #Rows
         for j in range(NUM_COLUMNS_TABLE): #Columns
-            b = tkinter.Label(frameTable,relief=tkinter.RAISED)
+            b = tkinter.Label(frameTable,relief=tkinter.RAISED,bg="gray")
             msg = ""
             fontStyle = ""
             if not i:
@@ -267,10 +277,47 @@ def displayTable(frameTable,nList):
             b.config(text=msg)
             b.grid(row=i, column=j,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
             TABLE_ELEMENTS.append(b)
+    clusterTitle = tkinter.Label(frameTable,relief=tkinter.RAISED,text="CLUSTER INFORMATION",font=("Times New Roman", LSET_FONT, "bold"))
+    clusterTitle.grid(row=len(nList)+1,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+    for i in range(len(cList)+1): #Rows
+        for j in range(NUM_CLUSTER_COLUMN_HEADERS): #Columns
+            b = tkinter.Label(frameTable,relief=tkinter.RAISED,bg="gray")
+            msg = ""
+            numCol = 1
+            col = j
+            fontStyle = ""
+            if not i:
+                fontStyle = "bold"
+                if j == 2:
+                    numCol = 2
+                if j == 3:
+                    col = 4
+                msg = CLUSTER_COLUMN_HEADERS.pop(0)
+            else:
+                if j == 0:
+                    msg = cList[i-1].nodeID
+                if j == 1:
+                    msg = retrieveNodeByID(nList,cList[i - 1].nodeID).circuitNet
+                if j == 2:
+                    msg = len(cList[i-1].members)
+                    numCol = 2
+                if j == 3:
+                    msg = "{"
+                    for c in cList[i-1].members:
+                        msg += c + ","
+                    msg = msg[0:len(msg)-1] + "}"
+                    col = 4
+                fontStyle = "normal"
+            b.config(font=("Times New Roman", FONT_SIZE, fontStyle))
+            b.config(text=msg)
+            b.grid(row=i + len(nList) + 2, column=col,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W,columnspan=numCol)
+            CLUSTER_TABLE_ELEMENTS.append(b)
+
+
     lsetTitle = tkinter.Label(frameTable,relief=tkinter.RAISED,text="CURRENT L SET",font=("Times New Roman", LSET_FONT, "bold"))
-    lsetTitle.grid(row=len(nList)+1,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
-    lsetLabel = tkinter.Label(frameTable, relief=tkinter.RAISED,text=LSET,font=("Times New Roman", LSET_FONT, "normal"))
-    lsetLabel.grid(row=len(nList)+2,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+    lsetTitle.grid(row=len(nList)+len(cList)+3,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+    lsetLabel = tkinter.Label(frameTable, relief=tkinter.RAISED,text=LSET[LSET_INDEX],font=("Times New Roman", LSET_FONT, "normal"))
+    lsetLabel.grid(row=len(nList)+len(cList)+4,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
     return lsetLabel
 
     
@@ -280,12 +327,13 @@ def DAGPLACER(srcNList,nList):
     while (needToPlace):
         #do placement
         #print "Attempting Placement Iteration ", count
-        nList = nodePlacement(srcNList,nList)
+        #nListPlaced = nodePlacement(srcNList,nList)
+        nodePlacement(srcNList,nList)
         edgeList = []
         for srcNode in nList:
-            for n in srcNode.nextn:
-                nextNode = retrieveNodeByID(nList,n)
-                e = edgeGenerator(srcNode,nextNode)
+            for n in srcNode.prevn:
+                prevNode = retrieveNodeByID(nList,n)
+                e = edgeGenerator(prevNode,srcNode)
                 edgeList.append(e)
         #verify placement
         needToPlace = verifyPlacement(nList,edgeList)
@@ -293,7 +341,7 @@ def DAGPLACER(srcNList,nList):
             #print "Placement Iteration ", count, " Failed"
         count += 1
         #cont = raw_input("Enter any key to continue")
-    return (nList,edgeList,count-1)
+    return (edgeList,count-1)
 
 def drawDAG():
     #WARNING: GLOBAL FUNCTION!!!!!
@@ -307,11 +355,95 @@ def drawDAG():
     for e in edgeList:
         arrowGenerator(p, e, SBUFFER, EBUFFER)
 
+def drawClusteredDAG():
+    #WARNING: GLOBAL FUNCTION!!!!!
+    #Drawing time
+    p.ht()
+    p.penup()
+    p.shape("Cluster.gif")
+    drawNodes(p, CLUSTERS_DRAWN)
+    p.shape("classic")
+    p.st()
+    for e in edgeClusterList:
+        arrowGenerator(p, e, SBUFFER, EBUFFER)
+
 def prevCallback():
+    global LSET_INDEX,CURRENT_CLUSTER_INDEX,CLUSTERS_DRAWN
     cv.delete("all")
+    CURRENT_CLUSTER_INDEX -= 1
+    LSET_INDEX -= 1
+    if LSET_INDEX < 0:
+        LSET_INDEX = 0
+    if CURRENT_CLUSTER_INDEX < -1:
+        CURRENT_CLUSTER_INDEX = -1
+    LSET_LABEL.config(text=LSET[LSET_INDEX])
+    for i in range(CURRENT_CLUSTER_INDEX+2):
+        for j in range(NUM_CLUSTER_COLUMN_HEADERS):
+            CLUSTER_TABLE_ELEMENTS[(i+1)*NUM_CLUSTER_COLUMN_HEADERS + j].config(bg="gray")
+    for i in range(len(nodeList)):
+        for j in range(NUM_COLUMNS_TABLE):
+            TABLE_ELEMENTS[(i+1)*NUM_COLUMNS_TABLE + j].config(bg="gray")
+    for i in range(CURRENT_CLUSTER_INDEX+1):
+        bgcolor = "yellow"
+        if i == CURRENT_CLUSTER_INDEX:
+            bgcolor = "green"
+        for j in range(NUM_CLUSTER_COLUMN_HEADERS):
+            CLUSTER_TABLE_ELEMENTS[(i+1)*NUM_CLUSTER_COLUMN_HEADERS + j].config(bg=bgcolor)
+    if (CURRENT_CLUSTER_INDEX == -1):
+        cv.create_text(0,0,text="NO CLUSTERS FORMED")
+    else:
+        CLUSTERS_DRAWN = clusterList[0:CURRENT_CLUSTER_INDEX+1]
+        for cl in CLUSTERS_DRAWN[0:-1]:
+            for c in cl.members:
+                for j in range(NUM_COLUMNS_TABLE):
+                    TABLE_ELEMENTS[int(c)*NUM_COLUMNS_TABLE + j].config(bg="yellow")
+        for c in CLUSTERS_DRAWN[-1].members:
+            for j in range(NUM_COLUMNS_TABLE):
+                TABLE_ELEMENTS[int(c)*NUM_COLUMNS_TABLE + j].config(bg="green")
+        drawClusteredDAG()
+
+
+def nextCallback():
+    global LSET_INDEX,CURRENT_CLUSTER_INDEX,CLUSTERS_DRAWN
+    cv.delete("all")
+    LSET_INDEX += 1
+    CURRENT_CLUSTER_INDEX += 1
+    if LSET_INDEX >= len(LSET):
+        LSET_INDEX = len(LSET)-1
+    if CURRENT_CLUSTER_INDEX >= len(clusterList):
+        CURRENT_CLUSTER_INDEX = len(clusterList)-1
+    LSET_LABEL.config(text=LSET[LSET_INDEX])
+    for i in range(CURRENT_CLUSTER_INDEX+1):
+        bgcolor = "yellow"
+        if i == CURRENT_CLUSTER_INDEX:
+            bgcolor = "green"
+        for j in range(NUM_CLUSTER_COLUMN_HEADERS):
+            CLUSTER_TABLE_ELEMENTS[(i+1)*NUM_CLUSTER_COLUMN_HEADERS + j].config(bg=bgcolor)
+    CLUSTERS_DRAWN = clusterList[0:CURRENT_CLUSTER_INDEX+1]
+    for cl in CLUSTERS_DRAWN[0:-1]:
+        for c in cl.members:
+            for j in range(NUM_COLUMNS_TABLE):
+                TABLE_ELEMENTS[int(c)*NUM_COLUMNS_TABLE + j].config(bg="yellow")
+    for c in CLUSTERS_DRAWN[-1].members:
+        for j in range(NUM_COLUMNS_TABLE):
+            TABLE_ELEMENTS[int(c)*NUM_COLUMNS_TABLE + j].config(bg="green")
+    drawClusteredDAG()
+
+def dagCallback():
+    global LSET_INDEX,CURRENT_CLUSTER_INDEX
+    cv.delete("all")
+    LSET_INDEX = 0
+    CURRENT_CLUSTER_INDEX = -1
+    LSET_LABEL.config(text=LSET[LSET_INDEX])
+    for i in range(len(clusterList)):
+        for j in range(NUM_CLUSTER_COLUMN_HEADERS):
+            CLUSTER_TABLE_ELEMENTS[(i+1)*NUM_CLUSTER_COLUMN_HEADERS + j].config(bg="gray")
+    for i in range(len(nodeList)):
+        for j in range(NUM_COLUMNS_TABLE):
+            TABLE_ELEMENTS[(i+1)*NUM_COLUMNS_TABLE + j].config(bg="gray")
+    drawDAG()
     
-#END OF FUNCTIONS
-    
+#END OF FUNCTIONS    
     
 if len(sys.argv) > 1:
     INPUT_GRAPH_FILENAME = sys.argv[1]
@@ -319,6 +451,8 @@ print "Parsing graph.txt"
 graphFile = open(INPUT_GRAPH_FILENAME,"r")
 nodeList = []
 edgeList = []
+clusterList = []
+clusterOrder = []
 FLAG = ""
 
 #Parse logic
@@ -328,7 +462,6 @@ for line in graphFile:
     sO = re.search( r'//(.*)', line)
     if sO:
         FLAG = sO.group(1)
-        continue
     if (FLAG == "NODES"):
         sO2 = re.search(r'(.*):(.*);(\d+);(.*);(.*);(.*);(.*)',line)
         if sO2:
@@ -343,28 +476,58 @@ for line in graphFile:
             newNode.cluster.sort()
             nodeList.append(newNode)
     if (FLAG == "CLUSTERS"):
-    	sO3 = re.search(r'^(.*):(.*);LSET:(.*)$',line)
+        sO3 = re.search(r'^(.*):(.*);LSET:(.*);ISET:(.*)$',line)
+        if sO3:
+            c = Node()
+            c.nodeID = sO3.group(1)
+            c.members = sO3.group(2).split()
+            LSET.append(sO3.group(3).split())
+            c.prevn = sO3.group(4).split()
+            clusterList.append(c)
+            clusterOrder.append(sO3.group(1))
+        else:
+            sO4 = re.search(r'^LSET:(.*)$',line)
+            if sO4:
+                LSET.append(sO4.group(1).split())
+
+
 
 sourceNodeList = []	
 for n in nodeList:
     if not n.prevn:
         sourceNodeList.append(n)
 
-LSET_LABEL = displayTable(tableFrame,nodeList)
+sourceClusterList = []
+for c in clusterList:
+    if not c.prevn:
+        sourceClusterList.append(c)
+
+#Display logic
+p.ht()
+LSET_LABEL = displayTable(tableFrame,nodeList,clusterList)
 
 start = time.time()
 
-(nodeList,edgeList,count) = DAGPLACER(sourceNodeList,nodeList)
+(edgeList,count) = DAGPLACER(sourceNodeList,nodeList)
 
 end = time.time()
-print "SUMMARY:\nIterations Required For Placement: ", count, "\nElapsed Time (ms): ", str((end - start )*1000.0)
+print "SUMMARY:\nIterations Required For DAG Placement: ", count, "\nElapsed Time (ms): ", str((end - start )*1000.0)
+
+start = time.time()
+
+(edgeClusterList,count) = DAGPLACER(sourceClusterList,clusterList)
+ 
+
+end = time.time()
+print "SUMMARY:\nIterations Required For Clustered Placement: ", count, "\nElapsed Time (Includes Sorting) (ms): ", str((end - start )*1000.0)
 
 #console buttons
-dagButton = tkinter.Button(root, text="DAG", command=drawDAG)
+dagButton = tkinter.Button(root, text="DAG", command=dagCallback)
 dagButton.place(x=0,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width = CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
 prevButton = tkinter.Button(root,text="PREV",command=prevCallback)
 prevButton.place(x=CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width = CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
-
+nextButton = tkinter.Button(root,text="NEXT",command=nextCallback)
+nextButton.place(x=2*CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width=CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
 
 #cv.create_oval(0,0,100,100)
 
