@@ -26,6 +26,8 @@ int USE_LAWLER_LABELING = false;
 #else
     bool UNIX_RUN = false;
 #endif
+int USE_GUI = false;
+int USE_EXP = false;
 
 std::string BLIFFile;
 
@@ -33,12 +35,6 @@ void addPredecessors(std::vector<Node *>&, Node*);
 int max_delay(Node*, Node*, std::vector<Node*>);
 void lawler_cluster(std::vector<Node *>&, Node*, std::vector<Cluster>&);
 int main(int argc, char **argv) {
-    if (UNIX_RUN){
-        BLIFFile = FILENAME;
-    }
-    else {
-        BLIFFile = "../" + FILENAME;
-    }
 
     //parse arguments
     int HELP_FLAG = 0;
@@ -52,6 +48,8 @@ int main(int argc, char **argv) {
         {"po_delay", required_argument, nullptr, 'o'},
         {"node_delay", required_argument, nullptr, 'n'},
         {"intercluster_delay", required_argument, nullptr, 'c'},
+        {"gui",no_argument,&USE_GUI,1},
+        {"exp",no_argument,&USE_EXP,1},
         {0,0,0,0}
     };
     int flag;
@@ -94,6 +92,8 @@ int main(int argc, char **argv) {
         std::cout << "--help\t\t\tDisplay this helptext" << std::endl;
         std::cout << "--lawler\t\tUse Lawler labeling algorithm instead of RW" << std::endl;
         std::cout << "--delay_matrix\t\tUse a delay matrix, (pays a memory penalty at a small runtime benefit)" << std::endl;
+        std::cout << "--gui\t\tEnable interactive GUI (pays a runtime penalty for GUI file creation)" << std::endl;
+        std::cout << "--exp\t\tEnable non-overlap for clusters that are subsets of other clusters (pays runtime penalty)" << std::endl;
         std::cout << "-s --max_cluster_size\tSet max cluster size (default 8)" << std::endl;
         std::cout << "-i --pi_delay\t\tSet delay for all primary input nodes (default 0)" << std::endl;
         std::cout << "-o --po_delay\t\tSet delay for all primary output nodes (default 1)" << std::endl;
@@ -103,8 +103,15 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    if (UNIX_RUN){
+        BLIFFile = FILENAME;
+    }
+    else {
+        BLIFFile = "../" + FILENAME;
+    }
 
-    ///*
+
+    /*
     std::cout << "RWClustering Application" << "\nAuthors: Akshay Nagendra <akshaynag@gatech.edu>, Paul Yates <pyates6@gatech.edu>" << std::endl;
     std::cout << "------------------------------------" << std::endl;
     std::cout << "Input File: " << FILENAME.c_str() << std::endl;
@@ -114,12 +121,18 @@ int main(int argc, char **argv) {
     std::cout << "Normal Node Node Delay = " << NODE_DELAY << std::endl;
     std::cout << "Inter Cluster Delay = " << INTER_CLUSTER_DELAY << std::endl;
     if(USE_LAWLER_LABELING){
-        std::cout << "Using Lawlwer Labeling" << std::endl;
+        std::cout << "Using Lawler Labeling" << std::endl;
     }
     if(USE_DELAY_MATRIX) {
         std::cout << "Using Delay Matrix" << std::endl;
     }
-    //*/
+    if (USE_GUI){
+        std::cout << "Interctive GUI: Enabled" << std::endl;
+    }
+    else {
+        std::cout << "Interctive GUI: Disabled" << std::endl;
+    }
+    */
     std::vector<Node> rawNodeList;
 
     auto parsestart = sc::high_resolution_clock::now();
@@ -434,12 +447,16 @@ int main(int argc, char **argv) {
     }
     */
     std::vector<Cluster *> finalClusterList;
+    std::vector<std::vector<Node*>> L_HISTORY;
     auto clusterPhaseStart = sc::high_resolution_clock::now();
     if(!USE_LAWLER_LABELING) { //for RW
         //CLUSTERING PHASE
         std::vector<Node *> L;
 
         std::copy(POs.begin(), POs.end(), std::back_inserter(L)); //Generate L as the set of all POs in the circuit
+        if (USE_GUI){
+            L_HISTORY.push_back(L);
+        }
 
         while (!L.empty()) {
             //retrieve first element of L and pop from L
@@ -456,6 +473,26 @@ int main(int argc, char **argv) {
                     retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
                     L.push_back(iNode);
                 }
+            }
+
+            if (USE_EXP) {
+                //Experiment Method
+                for (auto iNode : cl->inputSet) {
+                    bool alreadyAdded = true;
+                    for (auto n : clusters.at(iNode->id).members) {
+                        if (!Cluster::isClusterInList_str(n->strID, finalClusterList)) {
+                            alreadyAdded = false;
+                        }
+                    }
+                    if (!alreadyAdded && retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
+                        L.push_back(iNode);
+                    }
+                }
+            }
+
+
+            if (USE_GUI){
+                L_HISTORY.push_back(L);
             }
         }
     }
@@ -488,6 +525,9 @@ int main(int argc, char **argv) {
                      master,clusters,finalClusterList,
                      MAX_CLUSTER_SIZE,INTER_CLUSTER_DELAY,PRIMARY_INPUT_DELAY,PRIMARY_OUTPUT_DELAY,NODE_DELAY,
                      USE_LAWLER_LABELING);
+    if (USE_GUI) {
+        writeGUIFile(master, clusters, finalClusterList, L_HISTORY, maxIODelay, UNIX_RUN);
+    }
 
     std::ofstream verboseFile;
     if (!USE_LAWLER_LABELING) {

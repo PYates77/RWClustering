@@ -445,6 +445,88 @@ void writeOutputFiles(std::string circuitName,
     clustrTable.close();
 }
 
+void writeGUIFile(std::vector<Node*>& mNList,
+                  std::vector<Cluster>& cList,
+                  std::vector<Cluster*>& fClist,
+                  std::vector<std::vector<Node*>>& lsetHistory,
+                  int& maxDelay,bool& unixRun){
+    std::ofstream guiFile;
+    if (!unixRun){
+        guiFile.open("../Python/input_graph.dmp");
+    }
+    else {
+        guiFile.open("Python/input_graph.dmp");
+    }
+    guiFile << "//NODES" << std::endl;
+    for (int i=0; i < mNList.size(); ++i){
+        auto currentNode = mNList.at(i);
+        guiFile << currentNode->id + 1 << ":" << currentNode->strID << ";" << currentNode->delay << ";";
+        if (!currentNode->prev.empty()) {
+            for (auto iP = currentNode->prev.begin(); iP < currentNode->prev.end()-1; ++iP) {
+                guiFile << (*iP)->id + 1 << " ";
+            }
+            guiFile << (*(currentNode->prev.end()-1))->id + 1;
+        }
+        guiFile << ";";
+        if (!currentNode->next.empty()) {
+            for (auto iNx = currentNode->next.begin(); iNx < currentNode->next.end()-1; ++iNx) {
+                guiFile << (*iNx)->id + 1 << " ";
+            }
+            guiFile << (*(currentNode->next.end()-1))->id + 1;
+        }
+        guiFile << ";";
+        guiFile << currentNode->label << ";";
+        if (!cList.at(currentNode->id).members.empty()){
+            for (auto iC = cList.at(currentNode->id).members.begin(); iC < cList.at(currentNode->id).members.end()-1; ++iC){
+                guiFile << (*iC)->id + 1 << " ";
+            }
+            guiFile << (*(cList.at(currentNode->id).members.end()-1))->id + 1;
+        }
+        guiFile << std::endl;
+    }
+    guiFile << "//CLUSTERS" << std::endl;
+    if (!lsetHistory.empty()) {
+        guiFile << "LSET:";
+        if (!lsetHistory.begin()->empty()) {
+            for (auto n = lsetHistory.begin()->begin(); n < lsetHistory.begin()->end()-1; ++n) {
+                guiFile << (*n)->id + 1 << " ";
+            }
+            guiFile << (*(lsetHistory.begin()->end()-1))->id + 1;
+        }
+        guiFile << std::endl;
+        for (int i=0; i < fClist.size(); ++i){
+            auto lSet = lsetHistory.at(i+1);
+            auto currentCluster = fClist.at(i);
+            auto inputSet = fClist.at(i)->inputSet;
+            guiFile << currentCluster->id + 1 << ":";
+            if (!currentCluster->members.empty()){
+                for (auto mem = currentCluster->members.begin(); mem < currentCluster->members.end()-1;++mem){
+                    guiFile << (*mem)->id + 1 << " ";
+                }
+                guiFile << (*(currentCluster->members.end()-1))->id + 1 << ";";
+            }
+            guiFile << "LSET:";
+            if (!lSet.empty()) {
+                for (auto lNode = lSet.begin(); lNode < lSet.end() - 1; ++lNode) {
+                    guiFile << (*lNode)->id << " ";
+                }
+                guiFile << (*(lSet.end() - 1))->id + 1 << ";";
+            }
+            guiFile << "ISET:";
+            if (!inputSet.empty()){
+                for (auto mem = inputSet.begin(); mem < inputSet.end()-1; ++mem){
+                    guiFile << (*mem)->id + 1 << " ";
+                }
+                guiFile << (*(inputSet.end()-1))->id + 1;
+            }
+            guiFile << std::endl;
+        }
+
+    }
+    guiFile << "//MAXDELAY" << std::endl;
+    guiFile << maxDelay;
+    guiFile.close();
+}
 
 
 #endif //RW_COMMON_H
