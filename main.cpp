@@ -467,14 +467,6 @@ int main(int argc, char **argv) {
             Cluster *cl = &(clusters.at(lNode->id));
             finalClusterList.push_back(cl);
 
-            //add any node in input(lNode's cluster) whose cluster is not in the finalClusterList
-            for (auto iNode : cl->inputSet) {
-                if (!Cluster::isClusterInList(iNode->id, finalClusterList) &&
-                    retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
-                    L.push_back(iNode);
-                }
-            }
-
             if (USE_EXP) {
                 //Experiment Method
                 for (auto iNode : cl->inputSet) {
@@ -485,6 +477,15 @@ int main(int argc, char **argv) {
                         }
                     }
                     if (!alreadyAdded && retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
+                        L.push_back(iNode);
+                    }
+                }
+            }
+            else {
+                //add any node in input(lNode's cluster) whose cluster is not in the finalClusterList
+                for (auto iNode : cl->inputSet) {
+                    if (!Cluster::isClusterInList(iNode->id, finalClusterList) &&
+                        retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
                         L.push_back(iNode);
                     }
                 }
