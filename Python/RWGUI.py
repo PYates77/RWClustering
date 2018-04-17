@@ -33,7 +33,7 @@ EBUFFER = 40
 Y_STEP = 2.5*CURSOR_SIZE
 DEGREE_FOR_CONFLICT = 9
 SCROLLBAR_WIDTH = 16
-NUM_CONSOLE_BUTTONS = 3
+NUM_CONSOLE_BUTTONS = 4
 CONSOLE_WIDTH = CANVAS_DISPLAY_W + SCROLLBAR_WIDTH
 CONSOLE_BUTTON_HEIGHT = WINDOW_HEIGHT - (CANVAS_DISPLAY_H + SCROLLBAR_WIDTH)
 LABEL_WIDTH = int(1.25*FONT_SIZE)
@@ -44,6 +44,7 @@ NUM_CLUSTER_COLUMN_HEADERS = len(CLUSTER_COLUMN_HEADERS)
 TABLE_ELEMENTS = []
 CLUSTER_TABLE_ELEMENTS = []
 TABLE_WIDTH = WINDOW_WIDTH - (CANVAS_DISPLAY_W + SCROLLBAR_WIDTH)
+CURRENT_MODE = ""
 
 #CLUSTERING DATA
 LSET = []
@@ -53,6 +54,8 @@ LSET_LABEL = 0
 LSET_INDEX = 0
 CLUSTERS_DRAWN = []
 
+#OTHER GLOBAL DATA
+MAX_IO_DELAY = 0
 
 
 #GUI setup
@@ -60,6 +63,7 @@ root = tkinter.Tk()
 root.title("RW Clustering GUI")
 root.geometry(WINDOW_DIM)
 drawingFrame = tkinter.Frame(root)
+
 drawingFrame.place(x = 0, y = 0, width = CANVAS_DISPLAY_W+SCROLLBAR_WIDTH, height = CANVAS_DISPLAY_H+SCROLLBAR_WIDTH)
 v = tkinter.Scrollbar(drawingFrame, orient=tkinter.VERTICAL)
 h = tkinter.Scrollbar(drawingFrame,orient=tkinter.HORIZONTAL)
@@ -250,15 +254,18 @@ def verifyPlacement(nList,eList):
 
 def displayTable(frameTable,nList,cList):
     #Populate table of information
+    nodeTitle = tkinter.Label(frameTable,relief=tkinter.RAISED,text="NODE INFORMATION",font=("Times New Roman", LSET_FONT, "bold"))
+    nodeTitle.grid(row=0,columnspan=5,column=0,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
     for i in range(len(nList)+1): #Rows
         for j in range(NUM_COLUMNS_TABLE): #Columns
-            b = tkinter.Label(frameTable,relief=tkinter.RAISED,bg="gray")
+            b = tkinter.Label(frameTable,relief=tkinter.RAISED)
             msg = ""
             fontStyle = ""
             if not i:
                 fontStyle = "bold"
                 msg = COLUMN_HEADERS.pop(0)
             else:
+                b.config(bg="gray")
                 if j == 0:
                     msg = nList[i-1].nodeID
                 if j == 1:
@@ -275,10 +282,10 @@ def displayTable(frameTable,nList,cList):
                 fontStyle = "normal"
             b.config(font=("Times New Roman", FONT_SIZE, fontStyle))
             b.config(text=msg)
-            b.grid(row=i, column=j,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+            b.grid(row=i+1, column=j,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
             TABLE_ELEMENTS.append(b)
     clusterTitle = tkinter.Label(frameTable,relief=tkinter.RAISED,text="CLUSTER INFORMATION",font=("Times New Roman", LSET_FONT, "bold"))
-    clusterTitle.grid(row=len(nList)+1,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+    clusterTitle.grid(row=len(nList)+2,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
     for i in range(len(cList)+1): #Rows
         for j in range(NUM_CLUSTER_COLUMN_HEADERS): #Columns
             b = tkinter.Label(frameTable,relief=tkinter.RAISED,bg="gray")
@@ -310,14 +317,26 @@ def displayTable(frameTable,nList,cList):
                 fontStyle = "normal"
             b.config(font=("Times New Roman", FONT_SIZE, fontStyle))
             b.config(text=msg)
-            b.grid(row=i + len(nList) + 2, column=col,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W,columnspan=numCol)
+            b.grid(row=i + len(nList) + 3, column=col,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W,columnspan=numCol)
             CLUSTER_TABLE_ELEMENTS.append(b)
 
 
     lsetTitle = tkinter.Label(frameTable,relief=tkinter.RAISED,text="CURRENT L SET",font=("Times New Roman", LSET_FONT, "bold"))
-    lsetTitle.grid(row=len(nList)+len(cList)+3,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
-    lsetLabel = tkinter.Label(frameTable, relief=tkinter.RAISED,text=LSET[LSET_INDEX],font=("Times New Roman", LSET_FONT, "normal"))
-    lsetLabel.grid(row=len(nList)+len(cList)+4,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+    lsetTitle.grid(row=len(nList)+len(cList)+4,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+    lsetMsg = "{"
+    if LSET[LSET_INDEX]:
+        for lVal in LSET[LSET_INDEX]:
+            lsetMsg += lVal + ","
+        lsetMsg = lsetMsg[0:len(lsetMsg)-1] + "}"
+    else:
+        lsetMsg += "EMPTY}"
+    lsetLabel = tkinter.Label(frameTable, relief=tkinter.RAISED,text=lsetMsg,font=("Times New Roman", LSET_FONT, "normal"))
+    lsetLabel.grid(row=len(nList)+len(cList)+5,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+
+    delayTitleLabel = tkinter.Label(frameTable,relief=tkinter.RAISED,text="MAX IO PATH DELAY",font=("Times New Roman", LSET_FONT, "bold"))
+    delayTitleLabel.grid(row=len(nList)+len(cList)+6,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
+    delayLabel = tkinter.Label(frameTable,relief=tkinter.RAISED,text=MAX_IO_DELAY,font=("Times New Roman", LSET_FONT, "normal"))
+    delayLabel.grid(row=len(nList)+len(cList)+7,column=0,columnspan=5,sticky=tkinter.N+tkinter.E+tkinter.S+tkinter.W)
     return lsetLabel
 
     
@@ -362,13 +381,17 @@ def drawClusteredDAG():
     p.penup()
     p.shape("Cluster.gif")
     drawNodes(p, CLUSTERS_DRAWN)
-    p.shape("classic")
-    p.st()
     for e in edgeClusterList:
-        arrowGenerator(p, e, SBUFFER, EBUFFER)
+    	if e.srcNode in CLUSTERS_DRAWN and e.dstNode in CLUSTERS_DRAWN:
+    		p.shape("classic")
+    		p.st()
+        	arrowGenerator(p, e, SBUFFER, EBUFFER)
+        	p.ht()
 
 def prevCallback():
-    global LSET_INDEX,CURRENT_CLUSTER_INDEX,CLUSTERS_DRAWN
+    global LSET_INDEX,CURRENT_CLUSTER_INDEX,CLUSTERS_DRAWN,CURRENT_MODE
+    statusLabel.config(text="DRAWING CLUSTERS...",bg="yellow")
+    CURRENT_MODE = "CLUSTER"
     cv.delete("all")
     CURRENT_CLUSTER_INDEX -= 1
     LSET_INDEX -= 1
@@ -376,7 +399,14 @@ def prevCallback():
         LSET_INDEX = 0
     if CURRENT_CLUSTER_INDEX < -1:
         CURRENT_CLUSTER_INDEX = -1
-    LSET_LABEL.config(text=LSET[LSET_INDEX])
+    lsetMsg = "{"
+    if LSET[LSET_INDEX]:
+        for lVal in LSET[LSET_INDEX]:
+            lsetMsg += lVal + ","
+        lsetMsg = lsetMsg[0:len(lsetMsg)-1] + "}"
+    else:
+        lsetMsg += "EMPTY}"
+    LSET_LABEL.config(text=lsetMsg)
     for i in range(CURRENT_CLUSTER_INDEX+2):
         for j in range(NUM_CLUSTER_COLUMN_HEADERS):
             CLUSTER_TABLE_ELEMENTS[(i+1)*NUM_CLUSTER_COLUMN_HEADERS + j].config(bg="gray")
@@ -401,40 +431,71 @@ def prevCallback():
             for j in range(NUM_COLUMNS_TABLE):
                 TABLE_ELEMENTS[int(c)*NUM_COLUMNS_TABLE + j].config(bg="green")
         drawClusteredDAG()
+    statusLabel.config(text="READY",bg="green")
 
 
 def nextCallback():
-    global LSET_INDEX,CURRENT_CLUSTER_INDEX,CLUSTERS_DRAWN
+    global LSET_INDEX,CURRENT_CLUSTER_INDEX,CLUSTERS_DRAWN,CURRENT_MODE
+    statusLabel.config(text="DRAWING CLUSTERS...",bg="yellow")
+    CURRENT_MODE = "CLUSTER"
     cv.delete("all")
     LSET_INDEX += 1
+    allClustersPlaced = False
     CURRENT_CLUSTER_INDEX += 1
     if LSET_INDEX >= len(LSET):
         LSET_INDEX = len(LSET)-1
+        allClustersPlaced = True
     if CURRENT_CLUSTER_INDEX >= len(clusterList):
         CURRENT_CLUSTER_INDEX = len(clusterList)-1
-    LSET_LABEL.config(text=LSET[LSET_INDEX])
+    lsetMsg = "{"
+    if LSET[LSET_INDEX]:
+        for lVal in LSET[LSET_INDEX]:
+            lsetMsg += lVal + ","
+        lsetMsg = lsetMsg[0:len(lsetMsg)-1] + "}"
+    else:
+        lsetMsg += "EMPTY}"
+    LSET_LABEL.config(text=lsetMsg)
     for i in range(CURRENT_CLUSTER_INDEX+1):
         bgcolor = "yellow"
         if i == CURRENT_CLUSTER_INDEX:
             bgcolor = "green"
+        if allClustersPlaced:
+            bgcolor = "dark green"
         for j in range(NUM_CLUSTER_COLUMN_HEADERS):
             CLUSTER_TABLE_ELEMENTS[(i+1)*NUM_CLUSTER_COLUMN_HEADERS + j].config(bg=bgcolor)
     CLUSTERS_DRAWN = clusterList[0:CURRENT_CLUSTER_INDEX+1]
+
+    clusterBgColor = "yellow"
+    if allClustersPlaced:
+        clusterBgColor = "dark green"
     for cl in CLUSTERS_DRAWN[0:-1]:
         for c in cl.members:
             for j in range(NUM_COLUMNS_TABLE):
-                TABLE_ELEMENTS[int(c)*NUM_COLUMNS_TABLE + j].config(bg="yellow")
+                TABLE_ELEMENTS[int(c)*NUM_COLUMNS_TABLE + j].config(bg=clusterBgColor)
+    clusterBgColor = "green"
+    if allClustersPlaced:
+        clusterBgColor = "dark green"
     for c in CLUSTERS_DRAWN[-1].members:
         for j in range(NUM_COLUMNS_TABLE):
-            TABLE_ELEMENTS[int(c)*NUM_COLUMNS_TABLE + j].config(bg="green")
+            TABLE_ELEMENTS[int(c)*NUM_COLUMNS_TABLE + j].config(bg=clusterBgColor)
     drawClusteredDAG()
+    statusLabel.config(text="READY",bg="green")
 
 def dagCallback():
-    global LSET_INDEX,CURRENT_CLUSTER_INDEX
+    global LSET_INDEX,CURRENT_CLUSTER_INDEX,CURRENT_MODE
+    statusLabel.config(text="DRAWING DAG...",bg="yellow")
+    CURRENT_MODE = "DAG"
     cv.delete("all")
     LSET_INDEX = 0
     CURRENT_CLUSTER_INDEX = -1
-    LSET_LABEL.config(text=LSET[LSET_INDEX])
+    lsetMsg = "{"
+    if LSET[LSET_INDEX]:
+        for lVal in LSET[LSET_INDEX]:
+            lsetMsg += lVal + ","
+        lsetMsg = lsetMsg[0:len(lsetMsg)-1] + "}"
+    else:
+        lsetMsg += "EMPTY}"
+    LSET_LABEL.config(text=lsetMsg)
     for i in range(len(clusterList)):
         for j in range(NUM_CLUSTER_COLUMN_HEADERS):
             CLUSTER_TABLE_ELEMENTS[(i+1)*NUM_CLUSTER_COLUMN_HEADERS + j].config(bg="gray")
@@ -442,6 +503,19 @@ def dagCallback():
         for j in range(NUM_COLUMNS_TABLE):
             TABLE_ELEMENTS[(i+1)*NUM_COLUMNS_TABLE + j].config(bg="gray")
     drawDAG()
+    statusLabel.config(text="READY",bg="green")
+
+def redrawCallback():
+    statusLabel.config(text="REDRAWING...",bg="yellow")
+    cv.delete("all")
+    if CURRENT_MODE == "DAG":
+        drawDAG()
+    elif CURRENT_MODE == "CLUSTER":
+        if CURRENT_CLUSTER_INDEX == -1:
+            cv.create_text(0,0,text="NO CLUSTERS FORMED")
+        else:
+            drawClusteredDAG()
+    statusLabel.config(text="READY",bg="green")
     
 #END OF FUNCTIONS    
     
@@ -489,6 +563,10 @@ for line in graphFile:
             sO4 = re.search(r'^LSET:(.*)$',line)
             if sO4:
                 LSET.append(sO4.group(1).split())
+    if (FLAG == "MAXDELAY"):
+        sO5 = re.search(r'(\d+)',line)
+        if sO5:
+            MAX_IO_DELAY = sO5.group(1)
 
 
 
@@ -504,13 +582,17 @@ for c in clusterList:
 
 #Display logic
 p.ht()
+statusLabel = tkinter.Label(root,text="CONSTRUCTING TABLE AND DAG",bg="yellow",font=("Times New Roman", FONT_SIZE, "bold"))
+statusLabel.place(x=4*CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width=CONSOLE_WIDTH/(NUM_CONSOLE_BUTTONS-1),height = CONSOLE_BUTTON_HEIGHT)
 LSET_LABEL = displayTable(tableFrame,nodeList,clusterList)
+statusLabel.config(text="CONSTRUCTING DAG")
 
 start = time.time()
 
 (edgeList,count) = DAGPLACER(sourceNodeList,nodeList)
 
 end = time.time()
+statusLabel.config(text="CONSTRUCTING CLUSTERS")
 print "SUMMARY:\nIterations Required For DAG Placement: ", count, "\nElapsed Time (ms): ", str((end - start )*1000.0)
 
 start = time.time()
@@ -519,17 +601,23 @@ start = time.time()
  
 
 end = time.time()
+statusLabel.config(text="READY",bg="green")
 print "SUMMARY:\nIterations Required For Clustered Placement: ", count, "\nElapsed Time (Includes Sorting) (ms): ", str((end - start )*1000.0)
 
 #console buttons
 dagButton = tkinter.Button(root, text="DAG", command=dagCallback)
-dagButton.place(x=0,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width = CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
+dagButton.place(x=0*CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width = CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
 prevButton = tkinter.Button(root,text="PREV",command=prevCallback)
-prevButton.place(x=CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width = CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
+prevButton.place(x=1*CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width = CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
 nextButton = tkinter.Button(root,text="NEXT",command=nextCallback)
 nextButton.place(x=2*CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width=CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
+redrawButton = tkinter.Button(root,text="REDRAW",command=redrawCallback)
+redrawButton.place(x=3*CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,y=CANVAS_DISPLAY_H+SCROLLBAR_WIDTH,width=CONSOLE_WIDTH/NUM_CONSOLE_BUTTONS,height = CONSOLE_BUTTON_HEIGHT)
+
+
 
 #cv.create_oval(0,0,100,100)
+
 
 
 #drawDAG(p,nodeList,edgeList)
