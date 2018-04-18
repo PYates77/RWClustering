@@ -376,13 +376,13 @@ void writeOutputFiles(std::string circuitName,
     else {
         verboseResult << "RUN MODE: LAWLER\n" << std::endl;
     }
-    if (!cmdUseGui){
+    if (cmdUseGui){
         verboseResult << "GUI MODE: ENABLED" << std::endl;
     }
     else {
         verboseResult << "GUI MODE: DISABLED" << std::endl;
     }
-    if (!cmdUseExp){
+    if (cmdUseExp){
         verboseResult << "NON-OVERLAP MODE: ENABLED" << std::endl;
     }
     else {
