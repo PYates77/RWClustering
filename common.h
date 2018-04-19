@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <chrono>
+#include "string.h"
 
 #define CLUSTER_SIZE_LIMIT 10
 
@@ -541,7 +542,37 @@ void writeGUIFile(std::vector<Node*>& mNList,
     guiFile << maxDelay;
     guiFile.close();
 }
+int memParseLine(char *line){
+    // This assumes that a digit will be found and the line ends in " Kb".
+    int i = strlen(line);
+    const char* p = line;
+    while (*p <'0' || *p > '9') p++;
+    line[i-3] = '\0';
+    i = atoi(p);
+    return i;
+}
 
+void reportMemUsage(){ //only works on linux
+
+        FILE* file = fopen("/proc/self/status", "r");
+        int result1 = -1;
+        int result2 = -1;
+        char line[128];
+
+        while (fgets(line, 128, file) != NULL){
+            if (strncmp(line, "VmSize:", 7) == 0){
+                result1 = memParseLine(line);
+            }
+            if (strncmp(line, "VmRSS:", 6) == 0){
+                result2 = memParseLine(line);
+                break;
+            }
+        }
+        fclose(file);
+        std::cout << "------------MEMORY INFO-------------" << std::endl;
+        std::cout << "VIRTUAL MEMORY USED:\t" << result1/1024 << "MB" << std::endl;
+        std::cout << "PHYSICAL MEMORY USED:\t" << result2/1024 << "MB" << std::endl;
+}
 
 #endif //RW_COMMON_H
 

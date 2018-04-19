@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
         std::cout << "Arguments:" << std::endl;
         std::cout << "--help\t\t\tDisplay this helptext" << std::endl;
         std::cout << "--lawler\t\tUse Lawler labeling algorithm instead of RW" << std::endl;
-        std::cout << "--delay_matrix\t\tUse a delay matrix, (pays a memory penalty at a small runtime benefit)" << std::endl;
+        std::cout << "--delay_matrix\t\tUse a delay matrix, (pays a large memory penalty at a large runtime benefit)" << std::endl;
         std::cout << "--gui\t\tEnable interactive GUI (pays a runtime penalty for GUI file creation)" << std::endl;
         std::cout << "--exp\t\tEnable non-overlap for clusters that are subsets of other clusters (pays runtime penalty)" << std::endl;
         std::cout << "-s --max_cluster_size\tSet max cluster size (default 8)" << std::endl;
@@ -237,6 +237,7 @@ int main(int argc, char **argv) {
             }
 
         }
+        std::cout << "Delay Matrix Calculation Complete" << std::endl;
     }
     auto delayMEnd = sc::high_resolution_clock::now();
 
@@ -285,7 +286,6 @@ int main(int argc, char **argv) {
      */
 
 
-    std::cout << "Delay Matrix Calculation Complete" << std::endl;
 
    //////      CALCULATE LABELS    ///////
     auto labelClusterStart = sc::high_resolution_clock::now();
@@ -568,6 +568,11 @@ int main(int argc, char **argv) {
         std::cout << execStrs.at(i) << ":\t" << execTimes.at(i).first << execTimes.at(i).second << std::endl;
         verboseFile << execStrs.at(i) << ":\t" << execTimes.at(i).first << execTimes.at(i).second << std::endl;
     }
+
+#if (defined(LINUX) || defined(__linux__))
+    reportMemUsage();
+#endif
+
 
     verboseFile.close();
 
