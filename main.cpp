@@ -19,8 +19,8 @@ int INTER_CLUSTER_DELAY = 3;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
-int USE_DELAY_MATRIX = false;
-int USE_SPARSE = false;
+int USE_DELAY_MATRIX = true;
+int USE_SPARSE = true;
 std::string FILENAME = "example_lecture.blif";
 int USE_LAWLER_LABELING = false;
 #if (defined(LINUX) || defined(__linux__))
@@ -43,7 +43,8 @@ int main(int argc, char **argv) {
     const struct option longopts[] =
     {
         {"lawler", no_argument,     &USE_LAWLER_LABELING, 1},
-        {"delay_matrix", no_argument, &USE_DELAY_MATRIX, 1},
+        {"no_matrix", no_argument, &USE_DELAY_MATRIX, 0},
+        {"no_sparse", no_argument, &USE_SPARSE, 0},
         {"help", no_argument, &HELP_FLAG, 1},
         {"max_cluster_size", required_argument, nullptr, 's'},
         {"pi_delay", required_argument, nullptr, 'i'},
@@ -56,7 +57,7 @@ int main(int argc, char **argv) {
     };
     int flag;
     int option_index;
-    while(1){
+    while(true){
         flag = getopt_long(argc, argv, "s:i:o:n:c:", longopts, &option_index);
         if(flag == -1) break;
         switch(flag){
@@ -93,7 +94,8 @@ int main(int argc, char **argv) {
         std::cout << "Arguments:" << std::endl;
         std::cout << "--help\t\t\tDisplay this helptext" << std::endl;
         std::cout << "--lawler\t\tUse Lawler labeling algorithm instead of RW" << std::endl;
-        std::cout << "--delay_matrix\t\tUse a delay matrix, (pays a large memory penalty at a large runtime benefit)" << std::endl;
+        std::cout << "--no_matrix\t\tAvoid using a delay matrix, (pays a large runtime penalty at a large memory benefit)" << std::endl;
+        std::cout << "--no_sparse\t\tAvoid using a sparse matrix, (pays a large memory penalty at a small runtime benefit)" << std::endl;
         std::cout << "--gui\t\tEnable interactive GUI (pays a runtime penalty for GUI file creation)" << std::endl;
         std::cout << "--exp\t\tEnable non-overlap for clusters that are subsets of other clusters (pays runtime penalty)" << std::endl;
         std::cout << "-s --max_cluster_size\tSet max cluster size (default 8)" << std::endl;
@@ -605,10 +607,9 @@ int main(int argc, char **argv) {
         verboseFile << execStrs.at(i) << ":\t" << execTimes.at(i).first << execTimes.at(i).second << std::endl;
     }
 
-#if (defined(LINUX) || defined(__linux__))
-    reportMemUsage();
-#endif
-
+    if(UNIX_RUN){
+        reportMemUsage();
+    }
 
     verboseFile.close();
 
