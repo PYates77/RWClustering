@@ -176,8 +176,8 @@ int main(int argc, char **argv) {
     int indices[12] = {0,1,2,5,6,7,8,9,10,11,3,4};
     for (int i=0; i < 12; ++i){
         master.push_back(&rawNodeList.at(indices[i]));
-    }*/
-
+    }
+    */
 
     //number the nodes in order for use in indexing the delay_matrix array
 

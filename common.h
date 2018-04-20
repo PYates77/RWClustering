@@ -518,16 +518,16 @@ void writeGUIFile(std::vector<Node*>& mNList,
                 for (auto mem = currentCluster->members.begin(); mem < currentCluster->members.end()-1;++mem){
                     guiFile << (*mem)->id + 1 << " ";
                 }
-                guiFile << (*(currentCluster->members.end()-1))->id + 1 << ";";
+                guiFile << (*(currentCluster->members.end()-1))->id + 1;
             }
-            guiFile << "LSET:";
+            guiFile << ";LSET:";
             if (!lSet.empty()) {
                 for (auto lNode = lSet.begin(); lNode < lSet.end() - 1; ++lNode) {
-                    guiFile << (*lNode)->id << " ";
+                    guiFile << (*lNode)->id + 1 << " ";
                 }
-                guiFile << (*(lSet.end() - 1))->id + 1 << ";";
+                guiFile << (*(lSet.end() - 1))->id + 1;
             }
-            guiFile << "ISET:";
+            guiFile << ";ISET:";
             if (!inputSet.empty()){
                 for (auto mem = inputSet.begin(); mem < inputSet.end()-1; ++mem){
                     guiFile << (*mem)->id + 1 << " ";
