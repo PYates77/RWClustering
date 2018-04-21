@@ -569,7 +569,7 @@ void reportMemUsage(){ //only works on linux
             }
         }
         fclose(file);
-        std::cout << "------------MEMORY INFO-------------" << std::endl;
+        std::cout << "-----------MEMORY USAGE------------" << std::endl;
         std::cout << "VIRTUAL MEMORY USED:\t" << result1/1024 << "MB" << std::endl;
         std::cout << "PHYSICAL MEMORY USED:\t" << result2/1024 << "MB" << std::endl;
 }

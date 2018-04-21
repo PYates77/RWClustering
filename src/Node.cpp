@@ -2,7 +2,7 @@
 // Created by Paul on 3/1/2018.
 //
 
-#include "Node.h"
+#include "../include/Node.h"
 
 // for ordering nodes in S set, nodes are ordered first by label, then by ID
 bool compare_lv (const Node* lhs, const Node* rhs) {

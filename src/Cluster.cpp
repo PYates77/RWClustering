@@ -2,7 +2,7 @@
 // Created by Paul on 3/1/2018.
 //
 
-#include "Cluster.h"
+#include "../include/Cluster.h"
 
 
 // computes a L1 value from a cluster

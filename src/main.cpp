@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
                 INTER_CLUSTER_DELAY = std::atoi(optarg);
                 break;
             case '?':
-                return 0;
+                HELP_FLAG = 1;
                 break;
             default:
                 std::cout << "Encountered error with command line arguments" << std::endl;
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
         FILENAME = argv[optind];
     }
     if (HELP_FLAG) {
-        std::cout << "Usage: rw [arguments] [inputFile.blif]" << std::endl;
+        std::cout << "\nUsage: rw [arguments] [inputFile.blif]" << std::endl;
         std::cout << "Arguments:" << std::endl;
         std::cout << "--help\t\t\tDisplay this helptext" << std::endl;
         std::cout << "--lawler\t\tUse Lawler labeling algorithm instead of RW" << std::endl;
@@ -208,7 +208,6 @@ int main(int argc, char **argv) {
         if(!USE_SPARSE) {
             delay_matrix = new int[N * N]; // Delay matrix is NxN square matrix.
         }
-        //todo: convert this into a sparse matrix
 
         //delay_matrix[N*r+c] (aka delay_matrix[r][c]) represents max delay from node r to node c
         //the matrix entry = 0 if c precedes r in topological order
