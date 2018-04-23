@@ -12,6 +12,7 @@
 #include "string.h"
 
 #define CLUSTER_SIZE_LIMIT 10
+#define GUI_NODE_CLUSTERSIZE_LIMIT 20
 
 std::string INPUT_LATCH_PREFIX = "[IL]";
 std::string OUTPUT_LATCH_PREFIX = "[OL]";

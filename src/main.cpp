@@ -191,6 +191,11 @@ int main(int argc, char **argv) {
     }
     auto labelInitialEnd = sc::high_resolution_clock::now();
 
+    //Abort GUI if too large for GUI to handle
+    if (master.size() > GUI_NODE_CLUSTERSIZE_LIMIT || MAX_CLUSTER_SIZE > GUI_NODE_CLUSTERSIZE_LIMIT) {
+        USE_GUI = 0;
+    }
+
     //DEBUG
     /*
     std::cout << "TOPOLOGICAL ORDER: [";
@@ -628,7 +633,7 @@ int main(int argc, char **argv) {
 
     verboseFile.close();
 
-    if(USE_DELAY_MATRIX) {
+    if(USE_DELAY_MATRIX && !USE_SPARSE) {
         delete[] delay_matrix;
     }
 
