@@ -30,6 +30,7 @@ int USE_LAWLER_LABELING = false;
 #endif
 int USE_GUI = false;
 int USE_EXP = false;
+int USE_EXP2 = false;
 
 std::string BLIFFile;
 
@@ -495,42 +496,57 @@ int main(int argc, char **argv) {
             L_HISTORY.push_back(L);
         }
 
-        while (!L.empty()) {
-            //retrieve first element of L and pop from L
-            Node *lNode = *L.begin();
-            L.erase(L.begin());
+        if (USE_EXP2){
+            for(auto n : master){
+                n->visited = false;
+            }
+            for(auto it = master.rbegin(); it != master.rend(); ++it){
+                if(!(*it)->visited) {
+                    Cluster *cl = &(clusters.at((*it)->id));
+                    finalClusterList.push_back(cl);
+                    for(auto member : cl->members){
+                        member->visited = true;
+                    }
+                }
+            }
+        }
+        else {
+            while (!L.empty()) {
+                //retrieve first element of L and pop from L
+                Node *lNode = *L.begin();
+                L.erase(L.begin());
 
-            //add cluster to finalClusterList
-            Cluster *cl = &(clusters.at(lNode->id));
-            finalClusterList.push_back(cl);
+                //add cluster to finalClusterList
+                Cluster *cl = &(clusters.at(lNode->id));
+                finalClusterList.push_back(cl);
 
-            if (USE_EXP) {
-                //Experiment Method
-                for (auto iNode : cl->inputSet) {
-                    bool alreadyAdded = true;
-                    for (auto n : clusters.at(iNode->id).members) {
-                        if (!Cluster::isClusterInList_str(n->strID, finalClusterList)) {
-                            alreadyAdded = false;
+                if (USE_EXP) {
+                    //Experiment Method
+                    for (auto iNode : cl->inputSet) {
+                        bool alreadyAdded = true;
+                        for (auto n : clusters.at(iNode->id).members) {
+                            if (!Cluster::isClusterInList_str(n->strID, finalClusterList)) {
+                                alreadyAdded = false;
+                            }
+                        }
+                        if (!alreadyAdded && retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
+                            L.push_back(iNode);
                         }
                     }
-                    if (!alreadyAdded && retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
-                        L.push_back(iNode);
+                } else {
+                    //add any node in input(lNode's cluster) whose cluster is not in the finalClusterList
+                    for (auto iNode : cl->inputSet) {
+                        if (!Cluster::isClusterInList(iNode->id, finalClusterList) &&
+                            retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
+                            L.push_back(iNode);
+                        }
                     }
                 }
-            }
-            else {
-                //add any node in input(lNode's cluster) whose cluster is not in the finalClusterList
-                for (auto iNode : cl->inputSet) {
-                    if (!Cluster::isClusterInList(iNode->id, finalClusterList) &&
-                        retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
-                        L.push_back(iNode);
-                    }
+
+
+                if (USE_GUI) {
+                    L_HISTORY.push_back(L);
                 }
-            }
-
-
-            if (USE_GUI){
-                L_HISTORY.push_back(L);
             }
         }
     }
@@ -542,7 +558,7 @@ int main(int argc, char **argv) {
     auto clusterPhaseEnd = sc::high_resolution_clock::now();
 
     //DEBUG
-    /*
+    ///*
     std::cout << "FINAL CLUSTER LIST: " << std::endl;
     for (auto c : finalClusterList){
         std::cout << "CLUSTER " << master.at(c->id)->strID << ": [";
@@ -551,7 +567,7 @@ int main(int argc, char **argv) {
         }
         std::cout << "]" << std::endl;
     }
-    */
+    //*/
 
 
     std::cout << "PROGRAM COMPLETE" << std::endl;
