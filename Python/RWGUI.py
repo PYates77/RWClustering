@@ -62,8 +62,14 @@ MAX_IO_DELAY = 0
 if len(sys.argv) == 2:
     if sys.argv[1] == "--native":
         FONT_SIZE = 12
-    else:
+    elif sys.argv[1] == "--x11":
         FONT_SIZE = 16
+    else:
+        try:
+            FONT_SIZE = int(sys.argv[1])
+        except ValueError:
+            print "RWGUI.py ERROR: Cannot convert %s into a font size" %(sys.argv[1])
+            exit()
 
 #GUI setup
 root = tkinter.Tk()

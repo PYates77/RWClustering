@@ -9,6 +9,7 @@ set MCS = 8
 set PID = 0
 set POD = 1
 set ND = 1
+set FONT_SIZE = 0
 set lawler
 set no_sparse
 set no_matrix
@@ -46,8 +47,9 @@ else if ( $argv[1] == "--help" ) then
     echo "--outdir/--od    Specifies the directory to place all output files (default is just RWClustering/)"
     echo "------WARNING-----"
     echo "IF USING --gui, YOU MUST SPECIFY EITHER --native or --x11 to determine which method you are running the execution script"
-    echo "--native    Specifies the user is not using an X11 server for the GUI" 
-    echo "--x11    Specifies the user is using an X11 server for the GUI"
+    echo "--native    Specifies a font size as if the user is not using an X11 server for the GUI" 
+    echo "--x11    Specifies a font size as if the user is using an X11 server for the GUI"
+    echo "--fs    Specifies a font size for the GUI (overides --native and --x11)"
     echo "Experimental Optional Arguments:"
     echo "--exp:    (RW Only; PREFERRED) Use experimental cluster-subset based, non-overlap to avoid overlapping clusters (runtime increase)"
     echo "--exp2:    (RW Only; DEPRECATED) Use experimental alternate traversal, non-overlap to avoid overlapping clusters (runtime increase)"
@@ -77,8 +79,9 @@ while ( $i <= $#argv )
         echo "--outdir/--od    Specifies the directory to place all output files (default is just RWClustering/)"
         echo "------WARNING-----"
         echo "IF USING --gui, YOU MUST SPECIFY EITHER --native or --x11 to determine which method you are running the execution script"
-        echo "--native    Specifies the user is not using an X11 server for the GUI" 
-        echo "--x11    Specifies the user is using an X11 server for the GUI"
+        echo "--native    Specifies a font size as if the user is not using an X11 server for the GUI" 
+        echo "--x11    Specifies a font size as if the user is using an X11 server for the GUI"
+        echo "--fs    Specifies a font size for the GUI (overides --native and --x11)"
         echo "Experimental Optional Arguments:"
         echo "--exp:    (RW Only; PREFERRED) Use experimental cluster-subset based, non-overlap to avoid overlapping clusters (runtime increase)"
         echo "--exp2:    (RW Only; DEPRECATED) Use experimental alternate traversal, non-overlap to avoid overlapping clusters (runtime increase)"
@@ -171,6 +174,20 @@ while ( $i <= $#argv )
 		@ i++
 		continue
 	endif
+    if ( $argv[$i] == "--fs") then
+		@ i++
+		if ( $i > $#argv ) then
+			echo "ERROR: Did not specify font size value"
+			exit
+		endif
+		if ( $argv[$i] == "" ) then
+			echo "ERROR: Did not specify font size value"
+			exit
+		endif
+		@ FONT_SIZE = $argv[$i]
+		@ i++
+		continue
+	endif
 	if ( $argv[$i] == "--lawler" ) then
 		set lawler = $argv[$i]
 		@ i++
@@ -215,13 +232,18 @@ while ( $i <= $#argv )
 	echo "UNSUPPORTED OPTION: $argv[$i]"
 	exit	
 end
-if ( $gui != "" && $native == "" && $x11 == "" ) then
-    echo "[ERROR] You must specify either --native or --x11 if you want to use the GUI"
+if ( $gui != "" && $native == "" && $x11 == "" && $FONT_SIZE == 0 ) then
+    echo "[ERROR] You must specify either --native, --x11, or --fs <font size value> if you want to use the GUI"
     exit
 endif
 if ( $gui != "" && $native != "" && $x11 != "" ) then
     echo "[ERROR] You cannot specify both --native or -x11; Pick one"
     exit
+endif
+if ( $gui != "" && ($native != "" || $x11 != "") && $FONT_SIZE != 0 ) then
+    echo "[WARNING] Overiding font preset $native $x11 with --fs $FONT_SIZE"
+    set native = ""
+    set x11 = ""
 endif
 if ( ($exp != "" || $expt != "") && $lawler != "" ) then
     echo "[WARNING] Experimental methods do not support Lawler; Turning off Lawler..."
@@ -239,6 +261,7 @@ if ( $gui != "" && $expt != "" ) then
     echo "[WARNING] RWGUI does not support non-L set experimental traversal; Turning off GUI..."
     set gui = ""
 endif
+
 echo "--------------------"
 echo "[RWCEXECUTE] RUN PARAMETERS"
 echo "--------------------"
@@ -269,7 +292,7 @@ else
 	echo "EXPERIMENTAL NON-OVERLAP CLUSTER MODE: DISABLED"
 endif
 if ( $gui != "" ) then
-	echo "GUI MODE: ENABLED WITH $native $x11 SUPPORT"
+	echo "GUI MODE: ENABLED WITH $native$x11$FONT_SIZE FONT PRESET"
 else
 	echo "GUI MODE: DISABLED"
 endif
@@ -324,7 +347,11 @@ if ( -r "Python/input_graph.dmp" ) then
     echo "[RWCEXECUTE] RUNNING INTERACTIVE PYTHON GUI"
     echo "--------------------"
     cd Python
-    python RWGUI.py $native $x11
+    if ( $FONT_SIZE != 0 ) then
+        python RWGUI.py $FONT_SIZE
+    else
+        python RWGUI.py $native $x11
+    endif
     if ( $status != 0 ) then
         echo "PYTHON GUI FAILURE"
     endif
