@@ -30,6 +30,7 @@ int USE_LAWLER_LABELING = false;
 #endif
 int USE_GUI = false;
 int USE_EXP = false;
+int USE_EXP2 = false;
 
 std::string BLIFFile;
 
@@ -499,8 +500,12 @@ int main(int argc, char **argv) {
         if (USE_GUI){
             L_HISTORY.push_back(L);
         }
+        //using visited flag to tell if a node has been placed into the final cluster list
+        for(Node* n : master){
+            n->visited = false;
+        }
 
-        if (USE_EXP){ //todo: integrate this with L_HISTORY
+        if (USE_EXP2){ //todo: integrate this with L_HISTORY
             //experimental code to remove redundant clusters
             //Iterate through node list in reverse topological order
             //If a node is unvisited, add the cluster for which this node is the head
@@ -527,13 +532,16 @@ int main(int argc, char **argv) {
                 //add cluster to finalClusterList
                 Cluster *cl = &(clusters.at(lNode->id));
                 finalClusterList.push_back(cl);
+                for(Node* n : cl->members){
+                    n->visited = true;
+                }
 
-                if (false) { //formerly USE_EXP. todo: Akshay, salvage what code you need from here and remove
+                if (USE_EXP) {
                     //Experiment Method
                     for (auto iNode : cl->inputSet) {
                         bool alreadyAdded = true;
                         for (auto n : clusters.at(iNode->id).members) {
-                            if (!Cluster::isClusterInList_str(n->strID, finalClusterList)) {
+                            if(!n->visited){
                                 alreadyAdded = false;
                             }
                         }
