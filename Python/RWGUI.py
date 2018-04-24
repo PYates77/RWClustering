@@ -59,6 +59,12 @@ CLUSTERS_DRAWN = []
 MAX_IO_DELAY = 0
 
 
+if len(sys.argv) == 2:
+    if sys.argv[1] == "--native":
+        FONT_SIZE = 12
+    else:
+        FONT_SIZE = 16
+
 #GUI setup
 root = tkinter.Tk()
 root.title("RW Clustering GUI")
@@ -520,8 +526,6 @@ def redrawCallback():
     
 #END OF FUNCTIONS    
     
-if len(sys.argv) > 1:
-    INPUT_GRAPH_FILENAME = sys.argv[1]
 print "Parsing graph.txt"
 graphFile = open(INPUT_GRAPH_FILENAME,"r")
 nodeList = []
