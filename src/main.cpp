@@ -14,7 +14,7 @@
 
 namespace sc = std::chrono;
 
-int MAX_CLUSTER_SIZE = 4; //default value = 8
+int MAX_CLUSTER_SIZE = 8; //default value = 8
 int INTER_CLUSTER_DELAY = 3;
 int PRIMARY_INPUT_DELAY = 1;
 int PRIMARY_OUTPUT_DELAY = 1;
@@ -190,8 +190,12 @@ int main(int argc, char **argv) {
     uint32_t id = 0;
     for(auto node : master){
         node->id = id++;
-        //apply initial labeling (PI label = delay, non-PI label = 0)
-        node->label = node->delay;
+        //apply initial labeling
+        if(!USE_LAWLER_LABELING){
+            if(node->isPI) {
+                node->label = node->delay; //For RW, PIs start at node delay
+            }
+        }
     }
     auto labelInitialEnd = sc::high_resolution_clock::now();
 
