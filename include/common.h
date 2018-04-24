@@ -547,9 +547,11 @@ int memParseLine(char *line){
     return i;
 }
 
-void reportMemUsage(){ //only works on linux
+void reportMemUsage(std::string circuitName){ //only works on linux
 
         FILE* file = fopen("/proc/self/status", "r");
+        std::ofstream verboseFile;
+        verboseFile.open("output_" + circuitName + "_verbose.txt");
         int result1 = -1;
         int result2 = -1;
         char line[128];
@@ -567,6 +569,10 @@ void reportMemUsage(){ //only works on linux
         std::cout << "-----------MEMORY USAGE------------" << std::endl;
         std::cout << "VIRTUAL MEMORY USED:\t" << result1/1024 << "MB" << std::endl;
         std::cout << "PHYSICAL MEMORY USED:\t" << result2/1024 << "MB" << std::endl;
+        verboseFile << "\n-----------MEMORY USAGE------------\n" << std::endl;
+        verboseFile << "VIRTUAL MEMORY USED:\t" << result1/1024 << "MB" << std::endl;
+        verboseFile << "PHYSICAL MEMORY USED:\t" << result2/1024 << "MB" << std::endl;
+        verboseFile.close();
 }
 
 #endif //RW_COMMON_H

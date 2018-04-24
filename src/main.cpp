@@ -1,7 +1,16 @@
-//
-// Created by Paul on 2/13/2018.
-// TODO: Create a license or whatever up here so that lovely students after us can reference our nice code
-//
+/*
+PROJECT NAME: RWClustering Application
+AUTHORS:      Akshay Nagendra <akshaynag@gatech.edu>
+              Paul Yates      <paul.maxyat@gatech.edu>
+
+DESCRIPTION: C++ STL Implementation of the Rajaraman-Wong clustering algorithm designed to simplify
+             the complexity of input circuit netlist while minimizing the critical IO path delay
+FEATURES:   -Supports pure Rajaraman-Wong clustering with various runtime options such as sparse matrices and on-the fly delay calculations
+            -Utilizes a Python GUI (RWGUI) that highlights various stages of the clustering algorithm if the circuit is small enough
+            -Allows users to also run the Lawler labelling and clustering algorithm to compare the two clustering algorithms
+            -Supports experimental method to minimized area increase due to overlap in gate clusters (--exp)
+*/
+
 
 
 #include <set>
@@ -30,7 +39,7 @@ int USE_LAWLER_LABELING = false;
 #endif
 int USE_GUI = false;
 int USE_EXP = false;
-int USE_EXP2 = false;
+int USE_EXP2 = false; //RECOMMENDED AGAINST USING
 
 std::string BLIFFile;
 
@@ -609,7 +618,7 @@ int main(int argc, char **argv) {
     auto clusterPhaseEnd = sc::high_resolution_clock::now();
 
     //DEBUG
-    ///*
+    /*
     std::cout << "FINAL CLUSTER LIST: " << std::endl;
     for (auto c : finalClusterList){
         std::cout << "CLUSTER " << master.at(c->id)->strID << ": [";
@@ -618,7 +627,7 @@ int main(int argc, char **argv) {
         }
         std::cout << "]" << std::endl;
     }
-    //*/
+    */
 
     int maxIODelay_LAWLERMODIFIED = maxIODelay;
     if (!USE_LAWLER_LABELING){
@@ -634,7 +643,8 @@ int main(int argc, char **argv) {
     std::cout << "PROGRAM COMPLETE" << std::endl;
 
     //STATISTICS
-
+    long int CLUSTER_AREA_COST = 0;
+    float AREA_COST = 0.0f;
     //print to files
     writeOutputFiles(BLIFFile.substr(0,BLIFFile.length()-5),
                      master,clusters,finalClusterList,
@@ -683,6 +693,11 @@ int main(int argc, char **argv) {
         std::cout << "MAX IO PATH DELAY:\t" << maxIODelay << std::endl;
         verboseFile << "MAX IO PATH DELAY:\t" << maxIODelay << std::endl;
     }
+    for (auto cl : finalClusterList){
+        for (auto mem : cl->members){
+            CLUSTER_AREA_COST += 1;
+        }
+    }
     std::cout << "----------EXECUTION TIMES----------" << std::endl;
     verboseFile << "\n----------EXECUTION TIMES----------\n" << std::endl;
     for (uint32_t i=0; i < execStrs.size(); ++i){
@@ -690,9 +705,22 @@ int main(int argc, char **argv) {
         verboseFile << execStrs.at(i) << ":\t" << execTimes.at(i).first << execTimes.at(i).second << std::endl;
     }
 
+    verboseFile.close();
     if(UNIX_RUN){
-        reportMemUsage();
+        reportMemUsage(BLIFFile.substr(0, BLIFFile.length() - 5));
     }
+    verboseFile.open("output_" + BLIFFile.substr(0, BLIFFile.length() - 5) + "_verbose.txt", std::fstream::app);
+
+    std::cout << "----------AREA ANALYSIS----------" << std::endl;
+    verboseFile << "\n----------AREA ANALYSIS----------\n" << std::endl;
+    std::cout << "NOTE: Assuming unit area per node" << std::endl;
+    verboseFile << "NOTE: Assuming unit area per node" << std::endl;
+    std::cout << "ORIGINAL AREA:\t" << N << std::endl;
+    verboseFile << "ORIGINAL AREA:\t" << N << std::endl;
+    std::cout << "CLUSTERED AREA:\t" << CLUSTER_AREA_COST << std::endl;
+    verboseFile << "CLUSTERED AREA:\t" << CLUSTER_AREA_COST << std::endl;
+    std::cout << "AREA INCREASED BY FACTOR OF " << ((float) CLUSTER_AREA_COST)/((float)N) << std::endl;
+    verboseFile << "AREA INCREASED BY FACTOR OF " << ((float) CLUSTER_AREA_COST)/((float)N) << std::endl;
 
     verboseFile.close();
 
