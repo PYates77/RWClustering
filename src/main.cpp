@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
         {"lawler", no_argument,     &USE_LAWLER_LABELING, 1},
         {"no_matrix", no_argument, &USE_DELAY_MATRIX, 0},
         {"no_sparse", no_argument, &USE_SPARSE, 0},
-        {"help", no_argument, &HELP_FLAG, 1},
+        {"help", no_argument, nullptr, 'h'},
         {"max_cluster_size", required_argument, nullptr, 's'},
         {"pi_delay", required_argument, nullptr, 'i'},
         {"po_delay", required_argument, nullptr, 'o'},
@@ -88,6 +88,8 @@ int main(int argc, char **argv) {
             case 'c':
                 INTER_CLUSTER_DELAY = std::atoi(optarg);
                 break;
+            case 'h':
+                HELP_FLAG = 1;
             case '?':
                 HELP_FLAG = 1;
                 break;
@@ -101,18 +103,18 @@ int main(int argc, char **argv) {
     }
     if (HELP_FLAG) {
         std::cout << "\nUsage: rw [arguments] [inputFile.blif]" << std::endl;
-        std::cout << "Arguments:" << std::endl;
-        std::cout << "--help\t\t\tDisplay this helptext" << std::endl;
+        std::cout << "Options:" << std::endl;
+        std::cout << "-h, --help\t\tShow this help message and exit" << std::endl;
         std::cout << "--lawler\t\tUse Lawler labeling algorithm instead of RW" << std::endl;
         std::cout << "--no_matrix\t\tAvoid using a delay matrix, (pays a large runtime penalty at a large memory benefit)" << std::endl;
         std::cout << "--no_sparse\t\tAvoid using a sparse matrix, (pays a large memory penalty at a small runtime benefit)" << std::endl;
         std::cout << "--gui\t\tEnable interactive GUI (pays a runtime penalty for GUI file creation)" << std::endl;
         std::cout << "--exp\t\tEnable non-overlap for clusters that are subsets of other clusters (pays runtime penalty)" << std::endl;
-        std::cout << "-s --max_cluster_size\tSet max cluster size (default 8)" << std::endl;
-        std::cout << "-i --pi_delay\t\tSet delay for all primary input nodes (default 0)" << std::endl;
-        std::cout << "-o --po_delay\t\tSet delay for all primary output nodes (default 1)" << std::endl;
-        std::cout << "-n --node_delay\t\tSet delay for all non-pi and non-po nodes (default 1)" << std::endl;
-        std::cout << "-c --intercluster_delay\tSet intercluster delay (default 3)" << std::endl;
+        std::cout << "-s, --max_cluster_size\tSet max cluster size (default 8)" << std::endl;
+        std::cout << "-i, --pi_delay\t\tSet delay for all primary input nodes (default 0)" << std::endl;
+        std::cout << "-o, --po_delay\t\tSet delay for all primary output nodes (default 1)" << std::endl;
+        std::cout << "-n, --node_delay\t\tSet delay for all non-pi and non-po nodes (default 1)" << std::endl;
+        std::cout << "-c, --intercluster_delay\tSet intercluster delay (default 3)" << std::endl;
 
         return 0;
     }
