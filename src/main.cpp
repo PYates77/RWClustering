@@ -115,6 +115,10 @@ int main(int argc, char **argv) {
         BLIFFile = "../" + FILENAME;
     }
 
+    if(USE_LAWLER_LABELING){
+        USE_DELAY_MATRIX = false;//delay matrix should not be calculated for lawler labeling
+    }
+
 
     /*
     std::cout << "RWClustering Application" << "\nAuthors: Akshay Nagendra <akshaynag@gatech.edu>, Paul Yates <pyates6@gatech.edu>" << std::endl;
