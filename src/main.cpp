@@ -14,15 +14,15 @@
 
 namespace sc = std::chrono;
 
-int MAX_CLUSTER_SIZE = 8; //default value = 8
+int MAX_CLUSTER_SIZE = 4; //default value = 8
 int INTER_CLUSTER_DELAY = 3;
-int PRIMARY_INPUT_DELAY = 0;
+int PRIMARY_INPUT_DELAY = 1;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
 int USE_DELAY_MATRIX = true;
 int USE_SPARSE = true;
 std::string FILENAME = "example_lecture.blif";
-int USE_LAWLER_LABELING = false;
+int USE_LAWLER_LABELING = true;
 #if (defined(LINUX) || defined(__linux__))
     bool UNIX_RUN = true;
 #else
@@ -195,8 +195,8 @@ int main(int argc, char **argv) {
     }
     auto labelInitialEnd = sc::high_resolution_clock::now();
 
-    //Abort GUI if too large for GUI to handle
-    if (master.size() > GUI_NODE_CLUSTERSIZE_LIMIT || MAX_CLUSTER_SIZE > GUI_NODE_CLUSTERSIZE_LIMIT) {
+    //Abort GUI if too large for GUI to handle or if using non-pure Rajaraman-Clustering
+    if (master.size() > GUI_NODE_CLUSTERSIZE_LIMIT || MAX_CLUSTER_SIZE > GUI_NODE_CLUSTERSIZE_LIMIT || USE_EXP || USE_EXP2) {
         USE_GUI = 0;
     }
 
@@ -333,6 +333,7 @@ int main(int argc, char **argv) {
     auto labelClusterStart = sc::high_resolution_clock::now();
     std::vector<Cluster> clusters;
     int maxIODelay = 0;
+    int maxLabel = 0;
     if(!USE_LAWLER_LABELING) {
 
     // Let Gv be the subgraph containing v and all its predecessors
@@ -414,7 +415,7 @@ int main(int argc, char **argv) {
 
                 v->label = (L1 > L2) ? L1 : L2;
             }
-            maxIODelay = (v->label > maxIODelay) ? v->label : maxIODelay;
+            maxLabel = (v->label > maxLabel) ? v->label : maxLabel;
             generateInputSet(cl);
             clusters.push_back(cl);
         }
@@ -450,6 +451,18 @@ int main(int argc, char **argv) {
                         max = p->label;
                         count = 1;
                     }
+                    /*if (USE_DELAY_MATRIX){
+                        if (USE_SPARSE){
+                            maxIODelay = (sparse_delay_matrix.get(p->id,v->id) > maxIODelay) ? sparse_delay_matrix.get(p->id,v->id) : maxIODelay;
+                        }
+                        else {
+                            maxIODelay = (delay_matrix[N * p->id + v->id] > maxIODelay) ? delay_matrix[N * p->id + v->id] : maxIODelay;
+                        }
+                    }
+                    else {
+                      maxIODelay = (max_delay(p, v, master) > maxIODelay) ? max_delay(p, v, master) : maxIODelay;
+                    }*/
+                    maxIODelay = (max_delay(p, v, master) > maxIODelay) ? max_delay(p, v, master) : maxIODelay;
                 }
                 if(count < MAX_CLUSTER_SIZE){
                     v->label = max;
@@ -457,7 +470,7 @@ int main(int argc, char **argv) {
                 else{
                     v->label = max+1;
                 }
-                maxIODelay = (v->label > maxIODelay) ? v->label : maxIODelay;
+                maxLabel = (v->label > maxLabel) ? v->label : maxLabel;
             }
         }
         for(auto n : master){ //prepare for recursive clustering, set visited node to false so we only add each node once
@@ -589,6 +602,16 @@ int main(int argc, char **argv) {
     }
     //*/
 
+    int maxIODelay_LAWLERMODIFIED = maxIODelay;
+    if (!USE_LAWLER_LABELING){
+        //RW Clustering has max label = max PI-PO delay
+        maxIODelay = maxLabel;
+    }
+    else {
+        maxIODelay = maxIODelay + maxLabel;
+        maxIODelay_LAWLERMODIFIED = maxIODelay + maxLabel*INTER_CLUSTER_DELAY;
+    }
+
 
     std::cout << "PROGRAM COMPLETE" << std::endl;
 
@@ -633,9 +656,13 @@ int main(int argc, char **argv) {
     verboseFile << "TOTAL NUMBER OF NODES:\t" << N << std::endl;
     std::cout << "NUMBER OF CLUSTERS:\t" << finalClusterList.size() << std::endl;
     verboseFile << "NUMBER OF CLUSTERS:\t" << finalClusterList.size() << std::endl;
-    if (!USE_LAWLER_LABELING) {
-        std::cout << "MAX LABEL:\t" << maxIODelay << std::endl;
-        verboseFile << "MAX LABEL:\t" << maxIODelay << std::endl;
+    if (USE_LAWLER_LABELING) {
+        std::cout << "MAX LABEL:\t" << maxLabel << std::endl;
+        verboseFile << "MAX LABEL:\t" << maxLabel << std::endl;
+        std::cout << "MAX IO PATH DELAY (UNIT DELAY MODEL):\t" << maxIODelay << std::endl;
+        verboseFile << "MAX IO PATH DELAY (UNIT DELAY MODEL):\t" << maxIODelay << std::endl;
+        std::cout << "MAX IO PATH DELAY (GENERAL DELAY MODEL):\t" << maxIODelay_LAWLERMODIFIED << std::endl;
+        verboseFile << "MAX IO PATH DELAY (GENERAL DELAY MODEL):\t" << maxIODelay_LAWLERMODIFIED << std::endl;
     }
     else {
         std::cout << "MAX IO PATH DELAY:\t" << maxIODelay << std::endl;
