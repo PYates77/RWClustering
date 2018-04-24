@@ -584,7 +584,7 @@ int main(int argc, char **argv) {
                      master,clusters,finalClusterList,
                      MAX_CLUSTER_SIZE,INTER_CLUSTER_DELAY,PRIMARY_INPUT_DELAY,PRIMARY_OUTPUT_DELAY,NODE_DELAY,
                      USE_LAWLER_LABELING,USE_GUI,USE_EXP);
-    if (USE_GUI) {
+    if (USE_GUI && !USE_LAWLER_LABELING) {
         writeGUIFile(master, clusters, finalClusterList, L_HISTORY, maxIODelay, UNIX_RUN);
     }
 
@@ -618,8 +618,14 @@ int main(int argc, char **argv) {
     verboseFile << "TOTAL NUMBER OF NODES:\t" << N << std::endl;
     std::cout << "NUMBER OF CLUSTERS:\t" << finalClusterList.size() << std::endl;
     verboseFile << "NUMBER OF CLUSTERS:\t" << finalClusterList.size() << std::endl;
-    std::cout << "MAX IO PATH DELAY:\t" << maxIODelay << std::endl;
-    verboseFile << "MAX IO PATH DELAY:\t" << maxIODelay << std::endl;
+    if (!USE_LAWLER_LABELING) {
+        std::cout << "MAX LABEL:\t" << maxIODelay << std::endl;
+        verboseFile << "MAX LABEL:\t" << maxIODelay << std::endl;
+    }
+    else {
+        std::cout << "MAX IO PATH DELAY:\t" << maxIODelay << std::endl;
+        verboseFile << "MAX IO PATH DELAY:\t" << maxIODelay << std::endl;
+    }
     std::cout << "----------EXECUTION TIMES----------" << std::endl;
     verboseFile << "\n----------EXECUTION TIMES----------\n" << std::endl;
     for (uint32_t i=0; i < execStrs.size(); ++i){
