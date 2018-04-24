@@ -14,7 +14,7 @@
 
 namespace sc = std::chrono;
 
-int MAX_CLUSTER_SIZE = 4; //default value = 8
+int MAX_CLUSTER_SIZE = 8; //default value = 8
 int INTER_CLUSTER_DELAY = 3;
 int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
@@ -554,21 +554,34 @@ int main(int argc, char **argv) {
                 //add cluster to finalClusterList
                 Cluster *cl = &(clusters.at(lNode->id));
                 finalClusterList.push_back(cl);
-                for(Node* n : cl->members){
-                    n->visited = true;
-                }
 
                 if (USE_EXP) {
                     //Experiment Method
                     for (auto iNode : cl->inputSet) {
+                        //std::cout << "Checking if " << iNode->strID << " can be excluded" << std::endl;
                         bool alreadyAdded = true;
                         for (auto n : clusters.at(iNode->id).members) {
                             if(!n->visited){
+                                //std::cout << "Member " << n->strID << " has NOT been clustered" << std::endl;
                                 alreadyAdded = false;
                             }
+                            // DEBUG
+                            /*
+                            else{
+                                std::cout << "Member " << n->strID << " HAS been clustered" << std::endl;
+                            }
+                            */
+                        }
+                        // DEBUG
+                        if(alreadyAdded){
+                            //std::cout << "Refusing to add node " << iNode->strID << " to L set" << std::endl;
                         }
                         if (!alreadyAdded && retrieveNodeByStr_ptr(iNode->strID, L) == nullptr) {
                             L.push_back(iNode);
+                            for(Node* n : clusters.at(iNode->id).members){
+                                n->visited = true;
+                                //std::cout << n->strID << " was just clustered" << std::endl;
+                            }
                         }
                     }
                 } else {
