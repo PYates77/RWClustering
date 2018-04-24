@@ -14,22 +14,22 @@
 
 namespace sc = std::chrono;
 
-int MAX_CLUSTER_SIZE = 8; //default value = 8
+int MAX_CLUSTER_SIZE = 4; //default value = 8
 int INTER_CLUSTER_DELAY = 3;
-int PRIMARY_INPUT_DELAY = 1;
+int PRIMARY_INPUT_DELAY = 0;
 int PRIMARY_OUTPUT_DELAY = 1;
 int NODE_DELAY = 1;
 int USE_DELAY_MATRIX = true;
 int USE_SPARSE = true;
 std::string FILENAME = "example_lecture.blif";
-int USE_LAWLER_LABELING = true;
+int USE_LAWLER_LABELING = false;
 #if (defined(LINUX) || defined(__linux__))
     bool UNIX_RUN = true;
 #else
     bool UNIX_RUN = false;
 #endif
 int USE_GUI = false;
-int USE_EXP = false;
+int USE_EXP = true;
 int USE_EXP2 = false;
 
 std::string BLIFFile;
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
     auto labelInitialEnd = sc::high_resolution_clock::now();
 
     //Abort GUI if too large for GUI to handle or if using non-pure Rajaraman-Clustering
-    if (master.size() > GUI_NODE_CLUSTERSIZE_LIMIT || MAX_CLUSTER_SIZE > GUI_NODE_CLUSTERSIZE_LIMIT || USE_EXP || USE_EXP2) {
+    if (master.size() > GUI_NODE_CLUSTERSIZE_LIMIT || MAX_CLUSTER_SIZE > GUI_NODE_CLUSTERSIZE_LIMIT || USE_EXP2) {
         USE_GUI = 0;
     }
 
@@ -474,8 +474,8 @@ int main(int argc, char **argv) {
                 else{
                     v->label = max+1;
                 }
-                maxLabel = (v->label > maxLabel) ? v->label : maxLabel;
             }
+            maxLabel = (v->label > maxLabel) ? v->label : maxLabel;
         }
         for(auto n : master){ //prepare for recursive clustering, set visited node to false so we only add each node once
             n->visited = false;
@@ -526,11 +526,12 @@ int main(int argc, char **argv) {
             n->visited = false;
         }
 
-        if (USE_EXP2){ //todo: integrate this with L_HISTORY
+        if (USE_EXP2){
             //experimental code to remove redundant clusters
             //Iterate through node list in reverse topological order
             //If a node is unvisited, add the cluster for which this node is the head
             //For each node in the added cluster, set visited
+            //DOES NOT SUPPORT GUI
             for(auto n : master){
                 n->visited = false;
             }

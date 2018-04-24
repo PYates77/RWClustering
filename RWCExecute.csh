@@ -14,6 +14,7 @@ set no_sparse
 set no_matrix
 set gui
 set exp
+set exp2
 set native
 set x11
 if ($#argv == 0) then
@@ -41,7 +42,8 @@ else if ( $argv[1] == "--help" ) then
     echo "--no_sparse:    Use full delay matrix instead of default sparse matrix"
     echo "--no_matrix:    Use on-the-fly delay calculations instead of matrix (runtime increase; memory decrease)"
     echo "NOTE: --no_matrix overrides --no_sparse"
-    echo "--exp:    Use experimental non-overlap to avoid overlapping clusters (runtime increase)"
+    echo "--exp:    (RW Only) Use experimental non-overlap to avoid overlapping clusters (runtime increase)"
+    echo "--exp2:    (RW Only) Use experimental non-overlap to avoid overlapping clusters (method 2) (runtime increase)"
     echo "------WARNING-----"
     echo "IF USING --gui, YOU MUST SPECIFY EITHER --native or --x11 to determine which method you are running the execution script"
     echo "--native    Specifies the user is not using an X11 server for the GUI" 
@@ -68,7 +70,8 @@ while ( $i <= $#argv )
 		echo "--no_sparse    Use full delay matrix instead of default sparse matrix"
 		echo "--no_matrix    Use on-the-fly delay calculations instead of matrix (runtime increase; memory decrease)"
 		echo "NOTE: --no_matrix overrides --no_sparse"
-		echo "--exp    Use experimental non-overlap to avoid overlapping clusters (runtime increase)"
+		echo "--exp:    (RW Only) Use experimental non-overlap to avoid overlapping clusters (runtime increase)"
+        echo "--exp2:    (RW Only) Use experimental non-overlap to avoid overlapping clusters (method 2) (runtime increase)"
         echo "--gui    Use interactive GUI if the circuit is small enough"
         echo "------WARNING-----"
         echo "IF USING --gui, YOU MUST SPECIFY EITHER --native or --x11 to determine which method you are running the execution script"
@@ -170,6 +173,11 @@ while ( $i <= $#argv )
 		@ i++
 		continue
 	endif
+    if ( $argv[$i] == "--exp2" ) then
+		set exp2 = $argv[$i]
+		@ i++
+		continue
+	endif
 	if ( $argv[$i] == "--gui" ) then
 		set gui = $argv[$i]
 		@ i++
@@ -188,13 +196,29 @@ while ( $i <= $#argv )
 	echo "UNSUPPORTED OPTION: $argv[$i]"
 	exit	
 end
-if ( gui != "" && $native == "" && $x11 == "" ) then
+if ( $gui != "" && $native == "" && $x11 == "" ) then
     echo "[ERROR] You must specify either --native or --x11 if you want to use the GUI"
     exit
 endif
-if ( gui != "" && $native != "" && $x11 != "" ) then
+if ( $gui != "" && $native != "" && $x11 != "" ) then
     echo "[ERROR] You cannot specify both --native or -x11; Pick one"
     exit
+endif
+if ( ($exp != "" || $exp != "") && $lawler != "" ) then
+    echo "[WARNING] Experimental methods do not support Lawler; Turning off Lawler..."
+    set lawler = ""
+endif
+if ( $exp != "" && $exp != "" ) then
+    echo "[ERROR] Cannot use both $exp and $exp2; Try with only one of the experimental methods"
+    exit
+endif
+if ( $gui != "" && $lawler != "" ) then
+    echo "[WARNING] RWGUI does not support Lawler at this time; Turning off GUI..."
+    set gui = ""
+endif
+if ( $gui != "" && $exp2 != "" ) then
+    echo "[WARNING] RWGUI does not support non-L set experimental traversal; Turning off GUI..."
+    set gui = ""
 endif
 echo "--------------------"
 echo "[RWCEXECUTE] RUN PARAMETERS"
