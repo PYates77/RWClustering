@@ -1,12 +1,10 @@
-INSTRUCTIONS FOR INPUT FILE FOR RWGUI.PY (You can also see an example in "input_graph_lecture.txt")
------------------------------------------------------------
-//NODES
-<INSERT NODE NAME>:<NAMES OF NETS CONTAINED BY THIS NODE>;<PREDECESSOR NODES SEPARATED WITH A SPACE>;<SUCCESSOR NODES SEPARATED WITH A SPACE>;<LABEL VALUE>;<NODES IN CLUSTER SEPARATED WITH A SPACE>
+INSTRUCTIONS FOR RUNNING RWGUI.py
+>python RWGUI.py <font_parameter>
+ <font_parameter> can either be one of the three options below:
+    (1) --native (which assumes you are not using SSH and X11 forwarding)
+    (2) --x11 (which assumes you are using SSH and X11 forwarding)
+    (3) <value> (any integer value if the above two presets aren't working for you)
+    
+This GUI script is also run as part of the RWCExecute.csh script if the --gui flag is passed to it.
 
-<CONTINUE THIS UNTIL ALL NODES ARE LISTED>
-//DELAY
-<SPECIFY DELAY>
------------------------------------------------------------
-
-INSTRUCTIONS FOR RUNNIG RWGUI.py
->python RWGUI.py <input file (optional but preferred)>
+For more information, ./RWCExecute.csh --help or go RWClustering/docs/ to read the RWGUI manual
