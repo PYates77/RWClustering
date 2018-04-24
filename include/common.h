@@ -349,16 +349,10 @@ void writeOutputFiles(std::string circuitName,
     std::ofstream verboseResult;
     std::ofstream clustrTable;
 
-    if (!cmdUseLawlerLabeling) {
-        resultTable.open("output_" + circuitName + "_table.csv");
-        verboseResult.open("output_" + circuitName + "_verbose.txt");
-        clustrTable.open("output_" + circuitName + "_cluster.csv");
-    }
-    else {
-        resultTable.open("output_" + circuitName + "_table_lawler.csv");
-        verboseResult.open("output_" + circuitName + "_verbose_lawler.txt");
-        clustrTable.open("output_" + circuitName + "_cluster_lawler.csv");
-    }
+
+    resultTable.open("output_" + circuitName + "_table.csv");
+    verboseResult.open("output_" + circuitName + "_verbose.txt");
+    clustrTable.open("output_" + circuitName + "_cluster.csv");
 
     if (cmdUseLawlerLabeling) { resultTable << "NODE,PI?,PO?,NODE DELAY,NODE LABEL" << std::endl; }
     else if (tooLargeForTable){ resultTable << "NODE,PI?,PO?,NODE DELAY,NODE LABEL,CLUSTER SIZE" << std::endl; }

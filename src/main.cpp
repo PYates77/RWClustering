@@ -29,7 +29,7 @@ int USE_LAWLER_LABELING = false;
     bool UNIX_RUN = false;
 #endif
 int USE_GUI = false;
-int USE_EXP = true;
+int USE_EXP = false;
 int USE_EXP2 = false;
 
 std::string BLIFFile;
@@ -632,12 +632,9 @@ int main(int argc, char **argv) {
     }
 
     std::ofstream verboseFile;
-    if (!USE_LAWLER_LABELING) {
-        verboseFile.open("output_" + BLIFFile.substr(0, BLIFFile.length() - 5) + "_verbose.txt", std::fstream::app);
-    }
-    else {
-        verboseFile.open("output_" + BLIFFile.substr(0, BLIFFile.length() - 5) + "_verbose_lawler.txt", std::fstream::app);
-    }
+
+    verboseFile.open("output_" + BLIFFile.substr(0, BLIFFile.length() - 5) + "_verbose.txt", std::fstream::app);
+
 
     std::vector<std::pair<long long int,std::string>> execTimes;
     std::vector<std::string> execStrs = {"PARSING AND POPULATION OF ALL NODES",
