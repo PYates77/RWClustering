@@ -10,7 +10,8 @@ Instructions for execution:
     >>> cmake .
     >>> make
     >>> chmod +x RWCExecute.csh
-(3) Execute the RWCExecute.csh script (>>> ./RWCExecute.csh --help to see all the possible options the RWClustering application can be run with)
+(3) Copy/Move any .blif files you wish to use into the RWClustering/ directory (it will be the same directory as where the rw executable will be created if running on an UNIX machine)
+(4) Execute the RWCExecute.csh script (>>> ./RWCExecute.csh --help to see all the possible options the RWClustering application can be run with)
   (a) Demo execution (if using SSH and X11 forwarding to run on an UNIX machine): ./RWCExecute.csh example_lecture.blif --s 4 --c 3 --gui --x11
   (b) Demo execution (if running locally on an UNIX machine): ./RWCExecute.csh example_lecture.blif --s 4 --c 3 --gui --native
   
