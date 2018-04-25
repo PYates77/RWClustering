@@ -255,7 +255,7 @@ while ( $i <= $#argv )
 			echo "ERROR: Did not specify resolution value"
 			exit
 		endif
-		if ( $argv[$i] != "1080p" || $argv[$i] != "720'") then
+		if ( $argv[$i] != "1080p" && $argv[$i] != "720p") then
 			echo "ERROR: Did not specify valid resolution"
 			exit
 		endif
@@ -291,8 +291,8 @@ if ( $gui != "" && $lawler != "" ) then
     echo "[WARNING] RWGUI does not support Lawler at this time; Turning off GUI..."
     set gui = ""
 endif
-if ( $gui != "" && $expt != "" ) then
-    echo "[WARNING] RWGUI does not support non-L set experimental traversal; Turning off GUI..."
+if ( $gui != "" && ($expt != "" || $exp != "") ) then
+    echo "[WARNING] RWGUI does not support experimental clustering at this time; Turning off GUI..."
     set gui = ""
 endif
 
@@ -326,7 +326,7 @@ else
 	echo "EXPERIMENTAL NON-OVERLAP CLUSTER MODE: DISABLED"
 endif
 if ( $gui != "" ) then
-	echo "GUI MODE: ENABLED WITH $native$x11$FONT_SIZE FONT PRESET"
+	echo "GUI MODE: ENABLED WITH $native$x11$FONT_SIZE $resFlag"
 else
 	echo "GUI MODE: DISABLED"
 endif
@@ -381,7 +381,11 @@ if ( -r "Python/input_graph.dmp" ) then
     echo "[RWCEXECUTE] RUNNING INTERACTIVE PYTHON GUI"
     echo "--------------------"
     cd Python
-    python RWGUI.py $native $x11 $FONT_SIZE $resFlag
+	if ( $FONT_SIZE != 0  ) then
+    	python RWGUI.py $resFlag $native $x11 $FONT_SIZE
+	else
+		python RWGUI.py $resFlag $native $x11
+	endif
     if ( $status != 0 ) then
         echo "PYTHON GUI FAILURE"
     endif

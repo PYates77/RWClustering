@@ -148,7 +148,7 @@ class Node:
         self.members = []
     def printNodeInfo(self):
         print "NODE ", self.nodeID
-        print "Nets Contained: ", self.circuitNets
+        print "Nets Contained: ", self.circuitNet
         print "Ancestors: ", self.prevn
         print "Successors: ", self.nextn
         print "Cluster(", self.nodeID, "): ", self.cluster
@@ -260,7 +260,7 @@ def nodePlacement(srcNodeList,nodeMasterList):
             nodesPlaced.append(toBePlaced[i])
 
 	
-    #return nodesPlaced
+    return nodesPlaced
 	
 def drawNodes(cursor,nList):
     """Helper function to draw the nodes onto the screen"""
@@ -383,16 +383,16 @@ def DAGPLACER(srcNList,nList):
     while (needToPlace):
         #do placement
         #print "Attempting Placement Iteration ", count
-        #nListPlaced = nodePlacement(srcNList,nList)
-        nodePlacement(srcNList,nList)
+        nListPlaced = nodePlacement(srcNList,nList)
+        #nodePlacement(srcNList,nList)
         edgeList = []
-        for srcNode in nList:
+        for srcNode in nListPlaced:
             for n in srcNode.prevn:
-                prevNode = retrieveNodeByID(nList,n)
+                prevNode = retrieveNodeByID(nListPlaced,n)
                 e = edgeGenerator(prevNode,srcNode)
                 edgeList.append(e)
         #verify placement
-        needToPlace = verifyPlacement(nList,edgeList)
+        needToPlace = verifyPlacement(nListPlaced,edgeList)
         #if (needToPlace):
             #print "Placement Iteration ", count, " Failed"
         count += 1
