@@ -308,8 +308,8 @@ if ( $no_matrix == "") then
 else
 	echo "MATRIX MODE: DISABLED"
 endif
-if ( $exp != "" || $expt != "" ) then
-	echo "EXPERIMENTAL NON-OVERLAP CLUSTER MODE: ENABLED WITH $exp $expt"
+if ( $exp != "" ) then
+	echo "EXPERIMENTAL NON-OVERLAP CLUSTER MODE: ENABLED"
 else
 	echo "EXPERIMENTAL NON-OVERLAP CLUSTER MODE: DISABLED"
 endif
