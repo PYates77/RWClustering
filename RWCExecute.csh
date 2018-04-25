@@ -15,7 +15,6 @@ set no_sparse
 set no_matrix
 set gui
 set exp
-set expt
 set native
 set x11
 set resFlag
@@ -61,7 +60,6 @@ else if ( $argv[1] == "--help" ) then
     echo "EXPERIMENTAL ARGUMENTS:"
     echo "----------"
     echo "--exp:    (RW Only; PREFERRED) Use experimental cluster-subset based, non-overlap to avoid overlapping clusters (runtime increase)"
-    echo "--exp2:    (RW Only; DEPRECATED) Use experimental alternate traversal, non-overlap to avoid overlapping clusters (runtime increase)"
     echo "----------"
     echo ""
     echo "EXAMPLE USAGE:"
@@ -102,7 +100,6 @@ while ( $i <= $#argv )
         echo "EXPERIMENTAL ARGUMENTS:"
         echo "----------"
         echo "--exp:    (RW Only; PREFERRED) Use experimental cluster-subset based, non-overlap to avoid overlapping clusters (runtime increase)"
-        echo "--exp2:    (RW Only; DEPRECATED) Use experimental alternate traversal, non-overlap to avoid overlapping clusters (runtime increase)"
         echo "----------"
         echo ""
         echo "EXAMPLE USAGE:"
@@ -229,11 +226,6 @@ while ( $i <= $#argv )
 		@ i++
 		continue
 	endif
-    if ( $argv[$i] == "--exp2" ) then
-		set expt = $argv[$i]
-		@ i++
-		continue
-	endif
 	if ( $argv[$i] == "--gui" ) then
 		set gui = $argv[$i]
 		@ i++
@@ -279,19 +271,15 @@ if ( $gui != "" && ($native != "" || $x11 != "") && $FONT_SIZE != 0 ) then
     set native = ""
     set x11 = ""
 endif
-if ( ($exp != "" || $expt != "") && $lawler != "" ) then
+if ( $exp != "" && $lawler != "" ) then
     echo "[WARNING] Experimental methods do not support Lawler; Turning off Lawler..."
     set lawler = ""
-endif
-if ( $exp != "" && $expt != "" ) then
-    echo "[ERROR] Cannot use both $exp and $expt; Try with only one of the experimental methods"
-    exit
 endif
 if ( $gui != "" && $lawler != "" ) then
     echo "[WARNING] RWGUI does not support Lawler at this time; Turning off GUI..."
     set gui = ""
 endif
-if ( $gui != "" && ($expt != "" || $exp != "") ) then
+if ( $gui != "" && $exp != "" ) then
     echo "[WARNING] RWGUI does not support experimental clustering at this time; Turning off GUI..."
     set gui = ""
 endif
