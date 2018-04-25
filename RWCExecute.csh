@@ -266,7 +266,7 @@ while ( $i <= $#argv )
 	echo "UNSUPPORTED OPTION: $argv[$i]"
 	exit	
 end
-if ( $gui != "" && ($native == "" && $x11 == "" && $FONT_SIZE == 0) || $resFlag == "") then
+if ( $gui != "" && (($native == "" && $x11 == "" && $FONT_SIZE == 0) || $resFlag == "")) then
     echo "[ERROR] You must specify a font size (either by --native, --x11, or --fs <font size value>) and a resolution (--res 720p or --res 1080p)"
     exit
 endif
