@@ -551,7 +551,7 @@ void reportMemUsage(std::string circuitName){ //only works on linux
 
         FILE* file = fopen("/proc/self/status", "r");
         std::ofstream verboseFile;
-        verboseFile.open("output_" + circuitName + "_verbose.txt");
+        verboseFile.open("output_" + circuitName + "_verbose.txt",std::fstream::app);
         int result1 = -1;
         int result2 = -1;
         char line[128];

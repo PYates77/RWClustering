@@ -12,8 +12,10 @@ Instructions for execution:
     >>> chmod +x RWCExecute.csh
 (3) Copy/Move any .blif files you wish to use into the RWClustering/ directory (it will be the same directory as where the rw executable will be created if running on an UNIX machine)
 (4) Execute the RWCExecute.csh script (>>> ./RWCExecute.csh --help to see all the possible options the RWClustering application can be run with)
-  (a) Demo execution (if using SSH and X11 forwarding to run on an UNIX machine): ./RWCExecute.csh example_lecture.blif --s 4 --c 3 --gui --x11
-  (b) Demo execution (if running locally on an UNIX machine): ./RWCExecute.csh example_lecture.blif --s 4 --c 3 --gui --native
+  (a) Demo execution (if using SSH and X11 forwarding to run on an UNIX machine): ./RWCExecute.csh example_lecture.blif --s 4 --c 3 --gui --x11 --res 1080p
+  (b) Demo execution (if running locally on an UNIX machine): ./RWCExecute.csh example_lecture.blif --s 4 --c 3 --gui --native --res 1080p
+  (c) If either of the top two presets don't result in a beautiful GUI (font size is too large), you can specify your own font as such:
+        ./RWCExecute.csh example_lecture.blif --s 4 --c 3 --gui --fs <INSERT YOUR FONT SIZE VALUE HERE> --res <Either 720p or 1080p>
   
 Further resources:
   Please consult the docs/ subdirectory for documentation about the project and a manual on how to use the interactive GUI (RWGUI.py)

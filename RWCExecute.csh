@@ -18,6 +18,7 @@ set exp
 set expt
 set native
 set x11
+set resFlag
 set OUTDIR
 if ($#argv == 0) then
 	echo "Must specify input BLIF files to use"
@@ -34,7 +35,8 @@ else if ( $argv[1] == "--help" ) then
     echo "DESCRIPTION: Script to run RWClustering Application"
     echo "USAGE:"
     echo "./RWCExecute.csh <BLIFILE> [optional args]"
-    echo "Optional Arguments:"
+    echo "General Arguments:"
+    echo "----------"
     echo "--s/--max_cluster_size <value>:    Specify max cluster size as <value>"
     echo "--c/--inter_cluster_delay <value>:    Specify inter cluster delay as <value>"
     echo "--i/--pi_delay <value>:    Specify every primary input delay as <value>"
@@ -45,50 +47,68 @@ else if ( $argv[1] == "--help" ) then
     echo "--no_matrix:    Use on-the-fly delay calculations instead of matrix (runtime increase; memory decrease)"
     echo "NOTE: --no_matrix overrides --no_sparse"
     echo "--outdir/--od    Specifies the directory to place all output files (default is just RWClustering/)"
-    echo "------WARNING-----"
-    echo "IF USING --gui, YOU MUST SPECIFY EITHER --native or --x11 to determine which method you are running the execution script"
-    echo "--native    Specifies a font size as if the user is not using an X11 server for the GUI" 
-    echo "--x11    Specifies a font size as if the user is using an X11 server for the GUI"
-    echo "--fs    Specifies a font size for the GUI (overides --native and --x11)"
-    echo "Experimental Optional Arguments:"
+    echo "GUI ARGUMENTS:"
+    echo "----------"
+    echo "--gui    Specifies the GUI is desired to be used (requires the user to specify a font size and a resolution preset"
+    echo "  You must specifies a font size for the GUI"
+    echo "  Available Options: --native, --x11, or -fs <value> where <value> is an integer specifying the font size"
+    echo "  --native means you are running on a local UNIX machie"
+    echo "  --x11 means you are running on a UNIX machine which you have ssh-ed into with X11 forwarding"
+    echo "  You must also specify the resolution like such:"
+    echo "  --res 720p    Specifies 720p resolution"
+    echo "  --res 1080p    Specifies 1080p resolution"
+    echo "    No other resolutions are supported"
+    echo "EXPERIMENTAL ARGUMENTS:"
+    echo "----------"
     echo "--exp:    (RW Only; PREFERRED) Use experimental cluster-subset based, non-overlap to avoid overlapping clusters (runtime increase)"
     echo "--exp2:    (RW Only; DEPRECATED) Use experimental alternate traversal, non-overlap to avoid overlapping clusters (runtime increase)"
+    echo "----------"
     echo ""
     echo "EXAMPLE USAGE:"
-    echo "    ./RWCExecute.csh example_lecture.blif --s 4 --gui --x11 --outdir demo"
+    echo "    ./RWCExecute.csh example_lecture.blif --s 4 --gui --fs x11 --res 1080p --outdir demo"
+    echo "    The above example is great if you are ssh-ed into a UNIX machine, with an x11 server and you have 1080p monitor"
     exit
 endif
 while ( $i <= $#argv )
 	if ($argv[$i] == "--help") then
 		echo "FILE: RWCExecute.csh"
-		echo "AUTHOR: Akshay Nagendra <akshaynag@gatech.edu>"
-		echo "DESCRIPTION: Script to run RWClustering Application"
-		echo "USAGE:"
-		echo "./RWCExecute.csh <BLIFILE> [optional args]"
-		echo "Optional Arguments:"
-		echo "--s/--max_cluster_size <value> \tSpecify max cluster size as <value>"
-		echo "--c/--inter_cluster_delay <value>    Specify inter cluster delay as <value>"
-		echo "--i/--pi_delay <value>    Specify every primary input delay as <value>"
-		echo "--o/--po_delay <value>    Specify every primary output delay as <value>"
-		echo "--n/--node_delay <value>    Specify every non-IO gate delay as <value>"
-		echo "--lawler    Use Lawler Labeling and Clustering instead of RW"
-		echo "--no_sparse    Use full delay matrix instead of default sparse matrix"
-		echo "--no_matrix    Use on-the-fly delay calculations instead of matrix (runtime increase; memory decrease)"
-		echo "NOTE: --no_matrix overrides --no_sparse"
-        echo "--gui    Use interactive GUI if the circuit is small enough"
+        echo "AUTHOR: Akshay Nagendra <akshaynag@gatech.edu>"
+        echo "DESCRIPTION: Script to run RWClustering Application"
+        echo "USAGE:"
+        echo "./RWCExecute.csh <BLIFILE> [optional args]"
+        echo "General Arguments:"
+        echo "----------"
+        echo "--s/--max_cluster_size <value>:    Specify max cluster size as <value>"
+        echo "--c/--inter_cluster_delay <value>:    Specify inter cluster delay as <value>"
+        echo "--i/--pi_delay <value>:    Specify every primary input delay as <value>"
+        echo "--o/--po_delay <value>:    Specify every primary output delay as <value>"
+        echo "--n/--node_delay <value>:    Specify every non-IO gate delay as <value>"
+        echo "--lawler:    Use Lawler Labeling and Clustering instead of RW"
+        echo "--no_sparse:    Use full delay matrix instead of default sparse matrix"
+        echo "--no_matrix:    Use on-the-fly delay calculations instead of matrix (runtime increase; memory decrease)"
+        echo "NOTE: --no_matrix overrides --no_sparse"
         echo "--outdir/--od    Specifies the directory to place all output files (default is just RWClustering/)"
-        echo "------WARNING-----"
-        echo "IF USING --gui, YOU MUST SPECIFY EITHER --native or --x11 to determine which method you are running the execution script"
-        echo "--native    Specifies a font size as if the user is not using an X11 server for the GUI" 
-        echo "--x11    Specifies a font size as if the user is using an X11 server for the GUI"
-        echo "--fs    Specifies a font size for the GUI (overides --native and --x11)"
-        echo "Experimental Optional Arguments:"
+        echo "GUI ARGUMENTS:"
+        echo "----------"
+        echo "--gui    Specifies the GUI is desired to be used (requires the user to specify a font size and a resolution preset"
+        echo "  You must specifies a font size for the GUI"
+        echo "  Available Options: --native, --x11, or -fs <value> where <value> is an integer specifying the font size"
+        echo "  --native means you are running on a local UNIX machie"
+        echo "  --x11 means you are running on a UNIX machine which you have ssh-ed into with X11 forwarding"
+        echo "  You must also specify the resolution like such:"
+        echo "  --res 720p    Specifies 720p resolution"
+        echo "  --res 1080p    Specifies 1080p resolution"
+        echo "    No other resolutions are supported"
+        echo "EXPERIMENTAL ARGUMENTS:"
+        echo "----------"
         echo "--exp:    (RW Only; PREFERRED) Use experimental cluster-subset based, non-overlap to avoid overlapping clusters (runtime increase)"
         echo "--exp2:    (RW Only; DEPRECATED) Use experimental alternate traversal, non-overlap to avoid overlapping clusters (runtime increase)"
+        echo "----------"
         echo ""
         echo "EXAMPLE USAGE:"
-        echo "    ./RWCExecute.csh example_lecture.blif --s 4 --gui --x11 --outdir demo"
-		exit
+        echo "    ./RWCExecute.csh example_lecture.blif --s 4 --gui --fs x11 --res 1080p --outdir demo"
+        echo "    The above example is great if you are ssh-ed into a UNIX machine, with an x11 server and you have 1080p monitor"
+        exit
 	endif
 	if ( $argv[$i] == "--max_cluster_size" || $argv[$i] == "--s") then
 		@ i++
@@ -229,11 +249,25 @@ while ( $i <= $#argv )
         @ i++
         continue
     endif
+    if ( $argv[$i] == "--res") then
+		@ i++
+		if ( $i > $#argv ) then
+			echo "ERROR: Did not specify resolution value"
+			exit
+		endif
+		if ( $argv[$i] != "1080p" || $argv[$i] != "720'") then
+			echo "ERROR: Did not specify valid resolution"
+			exit
+		endif
+		set resFlag = $argv[$i]
+		@ i++
+		continue
+	endif
 	echo "UNSUPPORTED OPTION: $argv[$i]"
 	exit	
 end
-if ( $gui != "" && $native == "" && $x11 == "" && $FONT_SIZE == 0 ) then
-    echo "[ERROR] You must specify either --native, --x11, or --fs <font size value> if you want to use the GUI"
+if ( $gui != "" && ($native == "" && $x11 == "" && $FONT_SIZE == 0) || $resFlag == "") then
+    echo "[ERROR] You must specify a font size (either by --native, --x11, or --fs <font size value>) and a resolution (--res 720p or --res 1080p)"
     exit
 endif
 if ( $gui != "" && $native != "" && $x11 != "" ) then
@@ -347,11 +381,7 @@ if ( -r "Python/input_graph.dmp" ) then
     echo "[RWCEXECUTE] RUNNING INTERACTIVE PYTHON GUI"
     echo "--------------------"
     cd Python
-    if ( $FONT_SIZE != 0 ) then
-        python RWGUI.py $FONT_SIZE
-    else
-        python RWGUI.py $native $x11
-    endif
+    python RWGUI.py $native $x11 $FONT_SIZE $resFlag
     if ( $status != 0 ) then
         echo "PYTHON GUI FAILURE"
     endif

@@ -15,25 +15,62 @@ import sys
 #PARAMETERS THAT CAN BE CONFIGURED BY USER
 #INPUT_GRAPH_FILENAME = "input_graph_lecture.dmp" #DEFAULT FILE
 INPUT_GRAPH_FILENAME = "input_graph.dmp"
+WINDOW_WIDTH = 1820
+WINDOW_HEIGHT = 980
+FONT_SIZE = 16  #6 for native 720p, 12 for 720p x11, 12 for native 1080p, 16 for 1080p x11
+DEGREE_FOR_CONFLICT = 5
+
+if len(sys.argv) >= 2:
+    if sys.argv[1] == "720p":
+        WINDOW_HEIGHT = 620
+        WINDOW_WIDTH = 1180
+        FONT_SIZE = 12
+        if len(sys.argv) > 2:
+            if sys.argv[2] == "--native":
+                FONT_SIZE = 6
+            elif sys.argv[2] == "--x11":
+                FONT_SIZE = 12
+            else:
+                try:
+                    FONT_SIZE = int(sys.argv[2])
+                except ValueError:
+                    print "RWGUI.py ERROR: Cannot convert value into an integer; Try again..."
+                    exit()
+            
+    elif sys.argv[1] == "1080p":
+        WINDOW_HEIGHT = 980
+        WINDOW_WIDTH = 1820
+        FONT_SIZE = 16
+        if len(sys.argv) > 2:
+            if sys.argv[2] == "--native":
+                FONT_SIZE = 12
+            elif sys.argv[2] == "--x11":
+                FONT_SIZE = 16
+            else:
+                try:
+                    FONT_SIZE = int(sys.argv[2])
+                except ValueError:
+                    print "RWGUI.py ERROR: Cannot convert value into an integer; Try again..."
+                    exit()
+    else:
+        print "RWGUI.py ERROR: Unsupported resolution"
+        exit()
+
 CURSOR_SIZE = 50
 GLOBAL_SKEW_X = 1.5*CURSOR_SIZE
 GLOBAL_SKEW_Y = CURSOR_SIZE
-CANVAS_DISPLAY_W = 850
-CANVAS_DISPLAY_H = 850
-CANVAS_WIDTH = 650
-CANVAS_HEIGHT = 650
-WINDOW_WIDTH = 1800
-WINDOW_HEIGHT = 920
+CANVAS_DISPLAY_W = 0.9 * WINDOW_HEIGHT
+CANVAS_DISPLAY_H = 0.9 * WINDOW_HEIGHT
+CANVAS_WIDTH = 0.7 * WINDOW_HEIGHT
+CANVAS_HEIGHT = 0.7 * WINDOW_HEIGHT
 WINDOW_DIM = str(WINDOW_WIDTH) + "x" + str(WINDOW_HEIGHT)
 SCREEN_WIDTH = 2000
 SCREEN_HEIGHT = 2000
 TEXT_BUFFER = 10
-FONT_SIZE = 16  #use 12 or 14 for non-Xterm runs!
 SBUFFER = 20
 EBUFFER = 40
 Y_STEP = 2.5*CURSOR_SIZE
-DEGREE_FOR_CONFLICT = 9
-SCROLLBAR_WIDTH = 16
+SCROLLBAR_WIDTH = FONT_SIZE
 NUM_CONSOLE_BUTTONS = 4
 CONSOLE_WIDTH = CANVAS_DISPLAY_W + SCROLLBAR_WIDTH
 CONSOLE_BUTTON_HEIGHT = WINDOW_HEIGHT - (CANVAS_DISPLAY_H + SCROLLBAR_WIDTH)
@@ -57,19 +94,6 @@ CLUSTERS_DRAWN = []
 
 #OTHER GLOBAL DATA
 MAX_IO_DELAY = 0
-
-
-if len(sys.argv) == 2:
-    if sys.argv[1] == "--native":
-        FONT_SIZE = 12
-    elif sys.argv[1] == "--x11":
-        FONT_SIZE = 16
-    else:
-        try:
-            FONT_SIZE = int(sys.argv[1])
-        except ValueError:
-            print "RWGUI.py ERROR: Cannot convert %s into a font size" %(sys.argv[1])
-            exit()
 
 #GUI setup
 root = tkinter.Tk()
