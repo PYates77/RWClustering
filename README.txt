@@ -19,6 +19,7 @@ If done correctly you should see multiple BLIF files and directories such as "In
   (b) Demo execution (if running locally on an UNIX machine): ./RWCExecute.csh example_lecture.blif --s 4 --c 3 --gui --native --res 1080p
   (c) If either of the top two presets don't result in a beautiful GUI (font size is too large), you can specify your own font as such:
         ./RWCExecute.csh example_lecture.blif --s 4 --c 3 --gui --fs <INSERT YOUR FONT SIZE VALUE HERE> --res <Either 720p or 1080p>
+        
   
 Further resources:
   Please consult the docs/ subdirectory for documentation about the project and a manual on how to use the interactive GUI (RWGUI.py)
