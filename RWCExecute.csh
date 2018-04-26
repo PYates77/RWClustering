@@ -349,11 +349,10 @@ if ( $status != 0 ) then
     echo "[RWCEXECUTE] EXECUTION STATUS: FAILURE"
     echo "--------------------"
     exit
-else
-    echo "--------------------"
-    echo "[RWCEXECUTE] EXECUTION STATUS: PASS"
-    echo "--------------------"
 endif
+echo "--------------------"
+echo "[RWCEXECUTE] EXECUTION STATUS: PASS"
+echo "--------------------"
 if ( $OUTDIR != "" ) then
     echo "--------------------"
     echo "[RWCEXECUTE] MOVING OUTPUT FILES TO $OUTDIR"
