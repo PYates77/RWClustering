@@ -5,7 +5,8 @@ Authors: Akshay Nagendra <akshaynag@gatech.edu>
 Description: C++ implementation of the Rajaraman-Wong clustering algorithm designed to cluster gates in a complex input circuit netlist while minimizing the increase in critical delay through the circuit
 
 Instructions for execution:
-(1) Make sure you have unzipped version of the RWClustering directory
+(1) Make sure you have unzipped version of the RWClustering directory and then do the following:
+    >>>cd RWClustering/
 (2) Execute the following commands:
     >>> cmake .
     >>> make
