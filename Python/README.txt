@@ -1,6 +1,6 @@
 INSTRUCTIONS FOR RUNNING RWGUI.py
 >python RWGUI.py <resolution_parameter> <font_parameter>
- <font_paramater> and <resolution_parameter> are both optional arguments but HEAVILY RECOMMENDED
+ <resolution_parameter> and <font_paramater> are both optional arguments but HEAVILY RECOMMENDED
  <resolution_parameter> can be either one of the two options below:
     (1) 720p (which creates a window with a resolution that is slightly < than 720p)
     (2) 1080p (which creates a window with a resolution that is slightly < than 1080p)
